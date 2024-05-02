@@ -1,0 +1,24 @@
+| NOTE: This is a template file. Copy it into src/firebase.js (without this note)
+| and add replace all instances of
+|            <TEMPLATE>
+| with the required code. This is for security reasons.
+
+/*
+  WARNING: This file is not tracked by git for security reasons.
+  If changes are made here, please make the same changes in
+  src/firebase.js.template, and replace any sensitive data with
+  <TEMPLATE>
+*/
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  <TEMPLATE>
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
