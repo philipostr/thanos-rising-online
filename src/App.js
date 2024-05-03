@@ -1,21 +1,43 @@
 import './App.css';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-import { LobbyContextApp } from './gameContexts';
+import { database } from './firebase'
+import { ref, off, onValue } from 'firebase/database'
+
+import { LobbyContextApp, GameEventContextApp } from './gameContexts';
 import StartScreen from './Screens/StartScreen';
 import GameScreen from './Screens/GameScreen';
 
 function App() {
     const [lobby, setLobby] = useState('')
+    const [gameEvent, setGameEvent] = useState('')
+    const gameEventRef = useRef(null)
+
+    // When lobby changes, update the gameEventRef accordingly
+    useEffect(() => {
+        if (lobby === '') {
+            if (gameEventRef.current) {
+                off(gameEventRef.current)
+                gameEventRef.current = null
+            }
+        } else {
+            gameEventRef.current = ref(database, '/games/' + lobby + '/gameEvent')
+            onValue(gameEventRef.current, (snapshot) => {
+                setGameEvent(snapshot.val())
+            })
+        }
+    }, [lobby])
 
     return (
-        <LobbyContextApp.Provider value={[lobby, setLobby]}>
-            <div id='app'>
-                {lobby === '' ? <StartScreen /> : <GameScreen /> }
-                <button onClick={() => setLobby(' ')}>Press me</button>
-            </div>
-        </LobbyContextApp.Provider>
+        <GameEventContextApp.Provider value={gameEvent}>
+            <LobbyContextApp.Provider value={[lobby, setLobby]}>
+                <div id='app'>
+                    {lobby === '' ? <StartScreen /> : <GameScreen />}
+                </div>
+            </LobbyContextApp.Provider>
+        </GameEventContextApp.Provider>
+
     );
 }
 

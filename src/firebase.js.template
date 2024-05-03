@@ -11,14 +11,33 @@
 */
 
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp } from "firebase/app"
+import { getDatabase } from "firebase/database"
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth"
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  <TEMPLATE>
-};
+    <TEMPLATE>
+}
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig)
+// Initialize Realtime Database and get a reference to the service
+export const database = getDatabase(app)
+// Initialize anonymous authentication for player identification
+export var userID
+const auth = getAuth()
+signInAnonymously(auth).catch((error) => {
+    const errorMessage = error.message
+    console.log(errorMessage)
+});
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        userID = user.uid
+    }
+})
+
+/* Common Firebase functions for external use */
+export const sendGameEvent = () => {
+    console.log('hello');
+}
