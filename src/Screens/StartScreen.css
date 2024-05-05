@@ -1,0 +1,9 @@
+h1 {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+button {
+    margin-top: 20px;
+}

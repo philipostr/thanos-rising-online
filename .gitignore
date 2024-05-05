@@ -12,7 +12,7 @@
 /build
 
 # templated
-/src/firebase.js
+/src/firebaseConfig.js
 
 # misc
 .DS_Store

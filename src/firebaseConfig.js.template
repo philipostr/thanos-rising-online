@@ -12,7 +12,7 @@
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app"
-import { getDatabase } from "firebase/database"
+import { getDatabase, set, ref } from "firebase/database"
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth"
 
 // Your web app's Firebase configuration
@@ -38,6 +38,27 @@ onAuthStateChanged(auth, (user) => {
 })
 
 /* Common Firebase functions for external use */
-export const sendGameEvent = () => {
-    console.log('hello');
+export const createNewServer = (server) => {
+    set(ref(database, "games/" + server), {
+        gameEvent: '', // signal event to players
+        players: {
+            1: {
+                userID: userID,
+                cards: {}, // cards in the players hand
+                ready: false // signal that the player has received event (confirmation = toggle, not true)
+            }
+        },
+        turn: 0,
+        currentPlayer: 1,
+        absent: {}, // cards that have not yet been added to play
+        table: {
+            thanos: 1, // what sector thanos is currently looking at
+            sectors: {
+                1: {}, // cards in sector 1
+                2: {}, // cards in sector 2
+                3: {} // cards in sector 3
+            }
+        },
+        cards: {} // actual information about each card (location is specified in earlier fields)
+    })
 }

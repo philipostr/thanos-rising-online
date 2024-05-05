@@ -2,7 +2,7 @@ import './App.css';
 
 import { useState, useEffect, useRef } from 'react';
 
-import { database } from './firebase'
+import { database } from 'firebaseConfig'
 import { ref, off, onValue } from 'firebase/database'
 
 import { LobbyContextApp, GameEventContextApp } from './gameContexts';
@@ -22,7 +22,7 @@ function App() {
                 gameEventRef.current = null
             }
         } else {
-            gameEventRef.current = ref(database, '/games/' + lobby + '/gameEvent')
+            gameEventRef.current = ref(database, 'games/' + lobby + '/gameEvent')
             onValue(gameEventRef.current, (snapshot) => {
                 setGameEvent(snapshot.val())
             })
