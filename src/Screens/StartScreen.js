@@ -2,38 +2,47 @@ import './StartScreen.css'
 
 import { useState } from 'react'
 
-import { database, createNewServer } from 'firebaseConfig'
-
+import { database, createNewLobby } from 'firebaseConfig'
 import { get, ref } from 'firebase/database'
 
-const StartScreen = () => {
-    const [serverInput, setServerInput] = useState('')
+import { roles } from 'gameContexts'
+import { shuffleArray } from 'util'
 
-    const createServer = async () => {
-        let newServer = 0
+const StartScreen = ({ setLobby }) => {
+    const [lobbyInput, setLobbyInput] = useState('')
 
-        while (newServer === 0) {
+    const createLobby = async () => {
+        let newLobbyID = 0
+
+        while (newLobbyID === 0) {
             // Random server ID between [10000, 99999]
-            newServer = Math.floor(Math.random() * 90000) + 10000
-            let snapshot = await get(ref(database, "games/" + newServer))
+            newLobbyID = Math.floor(Math.random() * 90000) + 10000
+            let snapshot = await get(ref(database, "games/" + newLobbyID))
             if (snapshot.exists()) {
-                newServer = 0
+                newLobbyID = 0
             }
         }
 
-        createNewServer(newServer)
+        // If this is changed, update the lobby info schema in App.js accordingly
+        setLobby({
+            lobbyID: newLobbyID,
+            player: 1,
+            isCreator: true,
+            roles: shuffleArray(roles)
+        })
+        createNewLobby(newLobbyID)
     }
-    const joinServer = async () => {
-        console.log(serverInput);
+    const joinLobby = async () => {
+        console.log(lobbyInput);
     }
 
     return (
         <div id='startScreen'>
             <h1>Thanos Rising</h1>
-            <input id='serverID' type='text' placeholder='Server ID' onChange={(e) => {setServerInput(e.target.value)}} />
-            <button id='joinBtn' onClick={(e) => joinServer()}>Join server</button>
+            <input id='lobbyID' type='text' placeholder='Lobby ID' onChange={e => setLobbyInput(e.target.value)} />
+            <button id='joinBtn' onClick={e => joinLobby()}>Join lobby</button>
             <br />
-            <button id='createBtn' onClick={(e) => createServer()}>Create server</button>
+            <button id='createBtn' onClick={e => createLobby()}>Create lobby</button>
         </div>
     )
 }

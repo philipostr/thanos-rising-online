@@ -10,19 +10,24 @@ import StartScreen from './Screens/StartScreen';
 import GameScreen from './Screens/GameScreen';
 
 function App() {
-    const [lobby, setLobby] = useState('')
     const [gameEvent, setGameEvent] = useState('')
     const gameEventRef = useRef(null)
+    // Information about the current lobby. This is set in StartScreen
+    // and unset in the GameScreen. It looks like this:
+    // {
+    //     lobbyID, player, isCreator
+    // }
+    const [lobby, setLobby] = useState(null)
 
     // When lobby changes, update the gameEventRef accordingly
     useEffect(() => {
-        if (lobby === '') {
+        if (!lobby) {
             if (gameEventRef.current) {
                 off(gameEventRef.current)
                 gameEventRef.current = null
             }
         } else {
-            gameEventRef.current = ref(database, 'games/' + lobby + '/gameEvent')
+            gameEventRef.current = ref(database, 'games/' + lobby.lobbyID + '/gameEvent')
             onValue(gameEventRef.current, (snapshot) => {
                 setGameEvent(snapshot.val())
             })
@@ -31,9 +36,9 @@ function App() {
 
     return (
         <GameEventContextApp.Provider value={gameEvent}>
-            <LobbyContextApp.Provider value={[lobby, setLobby]}>
+            <LobbyContextApp.Provider value={lobby}>
                 <div id='app'>
-                    {lobby === '' ? <StartScreen /> : <GameScreen />}
+                    {!lobby ? <StartScreen setLobby={setLobby} /> : <GameScreen />}
                 </div>
             </LobbyContextApp.Provider>
         </GameEventContextApp.Provider>

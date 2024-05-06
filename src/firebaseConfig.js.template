@@ -38,8 +38,8 @@ onAuthStateChanged(auth, (user) => {
 })
 
 /* Common Firebase functions for external use */
-export const createNewServer = (server) => {
-    set(ref(database, "games/" + server), {
+export const createNewLobby = (lobby) => {
+    set(ref(database, "games/" + lobby), {
         gameEvent: '', // signal event to players
         players: {
             1: {
@@ -61,4 +61,9 @@ export const createNewServer = (server) => {
         },
         cards: {} // actual information about each card (location is specified in earlier fields)
     })
+}
+
+// Returns database reference string to the given lobby
+export const getLobbyRef = (lobbyID) => {
+    return 'games/' + lobbyID
 }
