@@ -1,21 +1,26 @@
-import './App.css';
+import './App.css'
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react'
 
 import { database, getLobbyRef } from 'firebaseConfig'
 import { ref, off, onValue } from 'firebase/database'
 
-import { LobbyContextApp, GameEventContextApp } from './gameContexts';
-import StartScreen from './Screens/StartScreen';
-import GameScreen from './Screens/GameScreen';
+import { LobbyContextApp, GameEventContextApp, ErrorMessageContextApp } from 'gameContexts'
+import ErrorCard from 'ErrorCard'
+import StartScreen from 'Screens/StartScreen'
+import GameScreen from 'Screens/GameScreen'
 
 function App() {
     const [gameEvent, setGameEvent] = useState('')
     const gameEventRef = useRef(null)
+    const [errMessage, setErrMessage] = useState('')
+    // Used to reset the timer for ErrorCard to disappear when there
+    // is a new error
+    const numErrMessage = useRef(0)
     // Information about the current lobby. This is set in StartScreen
     // and unset in the GameScreen. It looks like this:
     // {
-    //     lobbyID, player, isCreator
+    //     lobbyID, player, isCreator, roles (iff isCreator)
     // }
     const [lobby, setLobby] = useState(null)
 
@@ -34,15 +39,28 @@ function App() {
         }
     }, [lobby])
 
-    return (
-        <GameEventContextApp.Provider value={gameEvent}>
-            <LobbyContextApp.Provider value={lobby}>
-                <div id='app'>
-                    {!lobby ? <StartScreen setLobby={setLobby} /> : <GameScreen />}
-                </div>
-            </LobbyContextApp.Provider>
-        </GameEventContextApp.Provider>
+    // Remove ErrorCard after 5 seconds since the newest error message
+    useEffect(() => {
+        numErrMessage.current++
+        setTimeout(() => {
+            numErrMessage.current--
+            if (numErrMessage.current === 0) {
+                setErrMessage('')
+            }
+        }, 5000);
+    }, [errMessage])
 
+    return (
+        <ErrorMessageContextApp.Provider value={setErrMessage}>
+            <GameEventContextApp.Provider value={gameEvent}>
+                <LobbyContextApp.Provider value={lobby}>
+                    <div id='app'>
+                        {!lobby ? <StartScreen setLobby={setLobby} /> : <GameScreen />}
+                        <ErrorCard errMessage={errMessage} />
+                    </div>
+                </LobbyContextApp.Provider>
+            </GameEventContextApp.Provider>
+        </ErrorMessageContextApp.Provider>
     );
 }
 

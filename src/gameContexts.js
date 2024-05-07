@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext } from "react"
 
 /* =========================================
    ============ Provided in App ============ 
@@ -7,6 +7,8 @@ import { createContext } from "react";
 export const LobbyContextApp = createContext()
 // Turn-based events to be read instead of many individual listeners to data
 export const GameEventContextApp = createContext()
+// Used to signal ErrorCard of a new message
+export const ErrorMessageContextApp = createContext()
 
 
 /* =========================================

@@ -1,0 +1,24 @@
+#errorCard {
+    min-height: fit-content;
+    max-height: 15vh;
+    min-width: fit-content;
+    max-width: 25vw;
+    position: absolute;
+    display: none;
+    background-color: rgb(255, 255, 255);
+    bottom: 2vh;
+    right: 2vh;
+    border-radius: 8px;
+    color: rgb(243, 78, 78);
+    padding: 15px;
+}
+
+#errorCard #leftThing {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 8px 0 0 8px;
+    height: 100%;
+    width: 7px;
+    background-color: rgb(243, 78, 78);
+}

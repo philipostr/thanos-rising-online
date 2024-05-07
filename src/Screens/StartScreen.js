@@ -1,15 +1,16 @@
 import './StartScreen.css'
 
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 
 import { database, createNewLobby, joinLobby, getLobbyRef } from 'firebaseConfig'
 import { get, ref } from 'firebase/database'
 
-import { roles } from 'gameContexts'
+import { ErrorMessageContextApp, roles } from 'gameContexts'
 import { shuffleArray } from 'util'
 
 const StartScreen = ({ setLobby }) => {
     const [lobbyInput, setLobbyInput] = useState('')
+    const setErrMessage = useContext(ErrorMessageContextApp)
 
     const createLobbySubmit = async () => {
         let newLobbyID = 0
@@ -34,6 +35,7 @@ const StartScreen = ({ setLobby }) => {
     }
     const joinLobbySubmit = async () => {
         if (lobbyInput === '') {
+            setErrMessage('You must provide a lobby ID.')
             return
         }
 
@@ -53,9 +55,11 @@ const StartScreen = ({ setLobby }) => {
                     player: player,
                     isCreator: false
                 })
+            } else {
+                setErrMessage('There is no more space in this lobby.')
             }
         } else {
-            console.log("TODO: handle errors");
+            setErrMessage('This lobby ID does not exist.')
         }
     }
 
@@ -63,7 +67,7 @@ const StartScreen = ({ setLobby }) => {
         <div id='startScreen'>
             <h1>Thanos Rising</h1>
             <input id='lobbyID' type='text' placeholder='Lobby ID' onChange={e => setLobbyInput(e.target.value)} />
-            <button id='joinBtn' onClick={e => joinLobbySubmit()}>Join lobby</button>
+            <button id='joinBtn' disabled={lobbyInput === '' ? true : false} onClick={e => joinLobbySubmit()}>Join lobby</button>
             <br />
             <button id='createBtn' onClick={e => createLobbySubmit()}>Create lobby</button>
         </div>
