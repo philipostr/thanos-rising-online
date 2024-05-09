@@ -1,0 +1,1 @@
+sensitiveTemplates/firebaseConfig.js.template src/firebaseConfig.js

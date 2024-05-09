@@ -11,7 +11,8 @@
 # production
 /build
 
-# templated
+# templated for sensitive data
+/sensitiveTemplates/gitlessTrack
 /src/firebaseConfig.js
 
 # misc

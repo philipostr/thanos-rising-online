@@ -1,0 +1,22 @@
+#!/bin/sh
+# Used to copy git-tracked templates of code with redacted sensitive data
+# to their correct git-ignored locations in order to have the sensitive
+# data added without being tracked.
+
+padding=''
+
+while getopts p arg; do
+    case $arg in
+    p)
+        padding='    '
+        ;;
+    *)
+        echo "$arg not supported."
+        ;;
+    esac
+done
+
+while IFS=' ' read -ra LINE; do
+    echo "${padding}${LINE[1]}"
+    grep '^[^\|]' "sensitiveTemplates/${LINE[0]}" | tail -n +2 > "${LINE[1]}"
+done <<< "$(cat sensitiveTemplates/mapping.txt)"

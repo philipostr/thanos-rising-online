@@ -1,13 +1,16 @@
-| NOTE: This is a template file. Copy it into src/firebase.js (without this note)
+| This is a template file. Copy it into src/firebase.js (without this note)
 | and add replace all instances of
 |            <TEMPLATE>
 | with the required code. This is for security reasons.
+|
+| The copying is done by `make init`, all you need to do is replace the
+| <TEMPLATE> instances.
 
 /*
   WARNING: This file is not tracked by git for security reasons.
-  If changes are made here, please make the same changes in
-  src/firebase.js.template, and replace any sensitive data with
-  <TEMPLATE>
+  If changes are made here, they will be reflected in the
+  appropriate template file in the sensitiveTemplates directory
+  when attempting a git commit.
 */
 
 // Import the functions you need from the SDKs you need
@@ -37,7 +40,7 @@ onAuthStateChanged(auth, (user) => {
     }
 })
 
-/* Common Firebase functions for external use */
+/* Common Firebase functions for external use  */
 
 // Called by clicking the "Create lobby" button in StartScreen.
 // Returns true if the lobby creation was successful, false otherwise.

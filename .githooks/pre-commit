@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# Called by "git commit" with no arguments.  The hook should
+# exit with non-zero status after issuing an appropriate message if
+# it wants to stop the commit.
+
+# =====================================================
+# ======= Checking for modified sensitive files =======
+# =====================================================
+TEMPLATE_MSG=$(cat << END
+| This is a template file. Do not edit it unless expressly asked to.
+| Any programming should be done in the actualized file, which is
+| simply this file copied to its correct location.
+|
+| The copying is done by \`make init\`, all you need to do is replace the
+| <TEMPLATE> instances with the correct code.
+END
+)
+needsTemplateUpdate=()
+while read -r LINE; do
+    IFS=' ' read -ra FILES <<< "$LINE"
+    actual="${FILES[1]}"
+    actualOld="sensitiveTemplates/gitlessTrack/${actual##*/}"
+    if [ -e "$actualOld" ]; then
+        if cmp -s "$actual" "$actualOld"; then
+            # Everything is fine
+            true
+        else
+            # File with sensitive data has been changed
+            needsTemplateUpdate+=("$LINE $actualOld")
+        fi
+    else
+        # File with sensitive data has just been created and must be tracked
+        needsTemplateUpdate+=("$LINE $actualOld")
+    fi
+done <<< "$(cat sensitiveTemplates/mapping.txt)"
+
+# needsTemplateUpdate is not empty
+if (( ${#needsTemplateUpdate[@]} )); then
+    echo -e "\n\033[0;31mPlease appropriately replace all instances of sensitive data with <TEMPLATE>"
+    echo -e "in the following files, then \`git add\` them and run \`git commit\` again:\033[0m"
+    for LINE in "${needsTemplateUpdate[@]}"; do
+        IFS=' ' read -ra FILES <<< "$LINE"
+        echo "    ${FILES[0]}"
+        # Update gitless tracking of the file
+        cp "${FILES[1]}" "${FILES[2]}"
+
+        # Update template
+        echo "$TEMPLATE_MSG" > "${FILES[0]}"
+        echo >> "${FILES[0]}"
+        cat "${FILES[1]}" >> "${FILES[0]}"
+    done
+    echo
+    exit 1
+fi
+# END OF Checking for modified sensitive files
+
+# =====================================================
+# ==== Checking for unstaged sensitivity templates ====
+# =====================================================
+if (git ls-files -dmo --exclude-standard --exclude="mapping.txt" sensitiveTemplates | grep "^sensitiveTemplates/") 1>/dev/null 2>&1; then
+    echo "You have some unstaged changes to sensitivity templates."
+    read -r -p "Would you like to move on with the commit anyway? (Y/n) " response < /dev/tty
+    case $response in
+    [yY])
+        ;;
+    *)
+        exit 1
+        ;;
+    esac
+fi
+# END OF Checking for unstaged sensitivity templates
