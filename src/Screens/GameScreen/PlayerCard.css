@@ -1,0 +1,9 @@
+.playerCard {
+    display: block;
+    height: 80Vh;
+    width: 22vw;
+    border-color: black;
+    border-width: 3px;
+    border-style: solid;
+    opacity: 0;
+}

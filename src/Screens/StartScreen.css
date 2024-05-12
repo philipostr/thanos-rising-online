@@ -1,9 +1,9 @@
-h1 {
+#startScreen h1 {
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
 }
 
-button {
+#startScreen button {
     margin-top: 20px;
 }

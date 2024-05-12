@@ -1,0 +1,9 @@
+#playerCards {
+    display: flex;
+    align-items: start;
+    justify-content: space-around;
+}
+
+#lobbyID {
+    user-select: all;
+}

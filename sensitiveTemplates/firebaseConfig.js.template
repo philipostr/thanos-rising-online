@@ -1,10 +1,9 @@
-| This is a template file. Copy it into src/firebase.js (without this note)
-| and add replace all instances of
-|            <TEMPLATE>
-| with the required code. This is for security reasons.
+| This is a template file. Do not edit it unless expressly asked to.
+| Any programming should be done in the actualized file, which is
+| simply this file copied to its correct location.
 |
 | The copying is done by `make init`, all you need to do is replace the
-| <TEMPLATE> instances.
+| <TEMPLATE> instances with the correct code.
 
 /*
   WARNING: This file is not tracked by git for security reasons.
@@ -47,9 +46,29 @@ onAuthStateChanged(auth, (user) => {
 export const createNewLobby = async (lobbyID) => {
     await set(ref(database, getLobbyRef(lobbyID)), {
         gameEvent: '', // signal event to players
+        playerNum: 1,
         players: {
             1: {
                 userID: userID,
+                name: 'Player 1',
+                cards: {}, // cards in the players hand
+                ready: false // signal that the player has received event (confirmation = toggle, not true)
+            },
+            2: {
+                userID: '',
+                name: 'Player 2',
+                cards: {}, // cards in the players hand
+                ready: false // signal that the player has received event (confirmation = toggle, not true)
+            },
+            3: {
+                userID: '',
+                name: 'Player 3',
+                cards: {}, // cards in the players hand
+                ready: false // signal that the player has received event (confirmation = toggle, not true)
+            },
+            4: {
+                userID: '',
+                name: 'Player 4',
                 cards: {}, // cards in the players hand
                 ready: false // signal that the player has received event (confirmation = toggle, not true)
             }
@@ -77,21 +96,28 @@ export const createNewLobby = async (lobbyID) => {
 export const joinLobby = async (lobbyID) => {
     let player = -1
 
-    await get(ref(database, getLobbyRef(lobbyID) + '/players')).then((snapshot) => {
+    await get(ref(database, getLobbyRef(lobbyID) + '/playerNum')).then((snapshot) => {
         if (snapshot.exists()) {
-            let players = Object.keys(snapshot.val()).length
+            let players = snapshot.val()
             if (players < 4) {
                 player = players + 1
-                set(ref(database, getLobbyRef(lobbyID) + '/players/' + player), {
-                    userID: userID,
-                    cards: {}, // cards in the players hand
-                    ready: false // signal that the player has received event (confirmation = toggle, not true)
-                })
+                set(ref(database, getLobbyRef(lobbyID) + '/players/' + player + '/userID'), userID)
+                set(ref(database, getLobbyRef(lobbyID) + '/playerNum'), player)
             }
         }
     })
 
     return player
+}
+
+// Gets all the currently available data about a game/lobby
+export const getGameObject = async (lobbyID) => {
+    let gameObject = await get(ref(database, getLobbyRef(lobbyID)))
+
+    if (!gameObject.exists()) {
+        return null
+    }
+    return gameObject.val()
 }
 
 // Returns database reference string to the given lobby
