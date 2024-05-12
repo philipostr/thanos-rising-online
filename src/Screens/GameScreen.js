@@ -13,11 +13,11 @@ const GameScreen = ({ initialPlayerID }) => {
     const [playerID, setPlayerID] = useState(initialPlayerID)
     const [lobby] = useContext(LobbyContextApp)
 
-    // On mount, listen to other players leaving and adjust accordingly
+    // On playerID changed, listen to other players leaving and adjust accordingly
     useEffect(() => {
-        onValue(ref(database, getLobbyRef(lobby) + '/players'), (snapshot) => {
+        const unsubscribe = onValue(ref(database, getLobbyRef(lobby) + '/players'), (snapshot) => {
             if (snapshot.exists() && snapshot.val()[playerID].userID !== userID) {
-                for (let i = playerID; i >= 0; i--) {
+                for (let i = playerID; i > 0; i--) {
                     if (snapshot.val()[i].userID === userID) {
                         setPlayerID(i)
                         break
@@ -25,6 +25,8 @@ const GameScreen = ({ initialPlayerID }) => {
                 }
             }
         })
+
+        return unsubscribe
     }, [playerID, lobby])
 
     return (

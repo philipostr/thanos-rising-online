@@ -96,13 +96,23 @@ export const createNewLobby = async (lobbyID) => {
 export const joinLobby = async (lobbyID) => {
     let player = -1
 
-    await get(ref(database, getLobbyRef(lobbyID) + '/playerNum')).then((snapshot) => {
-        if (snapshot.exists()) {
-            let players = snapshot.val()
-            if (players < 4) {
-                player = players + 1
-                set(ref(database, getLobbyRef(lobbyID) + '/players/' + player + '/userID'), userID)
-                set(ref(database, getLobbyRef(lobbyID) + '/playerNum'), player)
+    await getGameObject(lobbyID).then((game) => {
+        if (game) {
+            // Search for userID already existing in the lobbies players
+            for (const [p, po] of Object.entries(game.players)) {
+                if (po.userID === userID) {
+                    player = parseInt(p)
+                    break
+                }
+            }
+            // If the player is not found already in the lobby
+            if (player === -1) {
+                let players = game.playerNum
+                if (players < 4) {
+                    player = players + 1
+                    set(ref(database, getLobbyRef(lobbyID) + '/players/' + player + '/userID'), userID)
+                    set(ref(database, getLobbyRef(lobbyID) + '/playerNum'), player)
+                }
             }
         }
     })
