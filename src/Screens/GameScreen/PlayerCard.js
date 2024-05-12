@@ -5,11 +5,12 @@ import { useState, useRef, useEffect, useContext, memo } from 'react'
 import { get, ref, set, onValue } from 'firebase/database'
 import { database, getLobbyRef } from 'firebaseConfig'
 
-import { LobbyContextApp } from 'gameContexts'
+import { LobbyContextApp, PlayerIDContextGameScreen } from 'gameContexts'
 
-const PlayerCard = ({playerID}) => {
-    const lobby = useContext(LobbyContextApp)
-    const isCurrentPlayer = useRef(lobby.player === playerID)
+const PlayerCard = ({ cardPlayerID }) => {
+    const [lobby] = useContext(LobbyContextApp)
+    const playerID = useContext(PlayerIDContextGameScreen)
+    const isCurrentPlayer = useRef(cardPlayerID === playerID)
     const playerCardDiv = useRef(null)
     const [playerName, setPlayerName] = useState('')
     const nameChange = useRef(false)
@@ -17,7 +18,7 @@ const PlayerCard = ({playerID}) => {
     // On component mount, appropriately link state `playerName` with the database
     useEffect(() => {
         if (isCurrentPlayer.current) {
-            get(ref(database, getLobbyRef(lobby.lobbyID) + "/players/" + playerID)).then((snapshot) => {
+            get(ref(database, getLobbyRef(lobby) + "/players/" + cardPlayerID)).then((snapshot) => {
                 if (snapshot.val().userID !== '') {
                     setPlayerName(snapshot.val().name)
                     playerCardDiv.current.style.opacity = '1'
@@ -27,7 +28,7 @@ const PlayerCard = ({playerID}) => {
                 }
             })
         } else {
-            onValue(ref(database, getLobbyRef(lobby.lobbyID) + "/players/" + playerID), (snapshot) => {
+            onValue(ref(database, getLobbyRef(lobby) + "/players/" + cardPlayerID), (snapshot) => {
                 if (snapshot.val().userID !== '') {
                     setPlayerName(snapshot.val().name)
                     playerCardDiv.current.style.opacity = '1'
@@ -37,11 +38,11 @@ const PlayerCard = ({playerID}) => {
                 }
             })
         }
-    }, [lobby, playerID])
+    }, [lobby, playerID, cardPlayerID])
 
     const newNameSubmit = async () => {
         if (nameChange.current) {
-            set(ref(database, getLobbyRef(lobby.lobbyID) + '/players/' + lobby.player + '/name'), playerName)
+            set(ref(database, getLobbyRef(lobby) + '/players/' + playerID + '/name'), playerName)
             nameChange.current = false
         }
     }
@@ -49,7 +50,7 @@ const PlayerCard = ({playerID}) => {
     return (
         <div className='playerCard' ref={playerCardDiv}>
             {isCurrentPlayer.current ?
-                <input className='playerNameText' type='text'
+                <input className='playerNameText' name='playerNameText' type='text'
                     value={playerName} onChange={e => {nameChange.current = true; setPlayerName(e.target.value)}}
                     onBlur={e => newNameSubmit()}
                 />

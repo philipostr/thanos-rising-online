@@ -3,15 +3,25 @@ import { createContext } from "react"
 /* =========================================
    ============ Provided in App ============ 
    ========================================= */
-// Information about the current lobby
-// Data shape provided in src/App.js for state `lobby`
+// The ID of the current lobby, and a function to set it
+// [string, function(string)]
 export const LobbyContextApp = createContext()
-// Turn-based events to be read instead of many individual listeners to data
-// string
-export const GameEventContextApp = createContext()
 // Used to signal ErrorCard of a new message
-// string
+// function(string)
 export const ErrorMessageContextApp = createContext()
+
+
+/* =========================================
+   ======== Provided in GameScreen ========= 
+   ========================================= */
+// The ID of the player (not the user. These are different values)
+// int
+export const PlayerIDContextGameScreen = createContext()
+
+
+/* =========================================
+   =========== Provided in Game ============ 
+   ========================================= */
 
 
 /* =========================================

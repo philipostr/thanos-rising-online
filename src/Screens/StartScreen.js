@@ -5,34 +5,28 @@ import { useContext, useState } from 'react'
 import { database, createNewLobby, joinLobby, getLobbyRef } from 'firebaseConfig'
 import { get, ref } from 'firebase/database'
 
-import { ErrorMessageContextApp, roles } from 'gameContexts'
-import { shuffleArray } from 'util'
+import { ErrorMessageContextApp } from 'gameContexts'
 
 const StartScreen = ({ setLobby }) => {
     const [lobbyInput, setLobbyInput] = useState('')
     const setErrMessage = useContext(ErrorMessageContextApp)
 
     const createLobbySubmit = async () => {
-        let newLobbyID = 0
+        let newLobbyID = ''
 
-        while (newLobbyID === 0) {
+        while (newLobbyID === '') {
             // Random server ID between [10000, 99999]
-            newLobbyID = Math.floor(Math.random() * 90000) + 10000
+            newLobbyID = (Math.floor(Math.random() * 90000) + 10000).toString()
             let snapshot = await get(ref(database, getLobbyRef(newLobbyID)))
             if (snapshot.exists()) {
-                newLobbyID = 0
+                newLobbyID = ''
             }
         }
 
-        // If this is changed, update the lobby info schema in App.js accordingly
-        setLobby({
-            lobbyID: newLobbyID,
-            player: 1,
-            isCreator: true,
-            roles: shuffleArray(roles)
-        })
+        setLobby(newLobbyID, 1)
         createNewLobby(newLobbyID)
     }
+
     const joinLobbySubmit = async () => {
         if (lobbyInput === '') {
             setErrMessage('You must provide a lobby ID.')
@@ -50,11 +44,7 @@ const StartScreen = ({ setLobby }) => {
         if (validLobby) {
             let player = await joinLobby(lobbyInput)
             if (player !== -1) {
-                setLobby({
-                    lobbyID: lobbyInput,
-                    player: player,
-                    isCreator: false
-                })
+                setLobby(lobbyInput, player)
             } else {
                 setErrMessage('There is no more space in this lobby.')
             }
