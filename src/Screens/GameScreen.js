@@ -14,7 +14,7 @@ const GameScreen = ({ initialPlayerID }) => {
     const [lobby, setLobby] = useContext(LobbyContextApp)
     const setErrMessage = useContext(ErrorMessageContextApp)
 
-    // On playerID changed, listen to other players leaving and adjust accordingly
+    // On playerID changed, listen to other players leaving and adjust accordingly (or player was kicked)
     useEffect(() => {
         const unsubscribe = onValue(ref(database, getLobbyRef(lobby) + '/players'), (snapshot) => {
             if (snapshot.exists()) {
@@ -25,6 +25,9 @@ const GameScreen = ({ initialPlayerID }) => {
                             break
                         }
                     }
+                    // Player's userID was not found, so they were kicked
+                    setLobby('')
+                    setErrMessage('You were kicked by the creator.')
                 }
             } else {
                 // This is if the lobby is deleted by the creator

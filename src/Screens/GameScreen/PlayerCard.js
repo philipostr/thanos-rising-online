@@ -3,7 +3,7 @@ import './PlayerCard.css'
 import { useState, useRef, useEffect, useContext, memo } from 'react'
 
 import { get, ref, set, onValue } from 'firebase/database'
-import { database, getLobbyRef } from 'firebaseConfig'
+import { database, getLobbyRef, removeFromLobby } from 'firebaseConfig'
 
 import { LobbyContextApp, PlayerIDContextGameScreen } from 'gameContexts'
 
@@ -68,6 +68,9 @@ const PlayerCard = ({ cardPlayerID }) => {
                 <p className='playerNameText'>
                     {playerName}
                 </p>
+            }
+            {playerID === 1 && cardPlayerID !== 1 &&
+                <button id='kickButton' onClick={e => removeFromLobby(lobby, cardPlayerID)}>Kick</button>
             }
         </div>
     )
