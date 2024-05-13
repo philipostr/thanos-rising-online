@@ -10,14 +10,14 @@ import { LobbyContextApp, PlayerIDContextGameScreen } from 'gameContexts'
 const PlayerCard = ({ cardPlayerID }) => {
     const [lobby] = useContext(LobbyContextApp)
     const playerID = useContext(PlayerIDContextGameScreen)
-    const isCurrentPlayer = useRef(cardPlayerID === playerID)
     const playerCardDiv = useRef(null)
     const [playerName, setPlayerName] = useState('')
     const nameChange = useRef(false)
 
-    // On component mount, appropriately link state `playerName` with the database
+    // On playerID change, appropriately link state `playerName` with the database
     useEffect(() => {
-        if (isCurrentPlayer.current) {
+        if (cardPlayerID === playerID) {
+            // Only fetch name once in case of rejoining
             get(ref(database, getLobbyRef(lobby) + "/players/" + cardPlayerID)).then((snapshot) => {
                 if (snapshot.val().userID !== '') {
                     setPlayerName(snapshot.val().name)
@@ -28,7 +28,9 @@ const PlayerCard = ({ cardPlayerID }) => {
                 }
             })
         } else {
-            onValue(ref(database, getLobbyRef(lobby) + "/players/" + cardPlayerID), (snapshot) => {
+            // Continuously check for changes in the other players' names
+            let unsubscribe = onValue(ref(database, getLobbyRef(lobby) + "/players/" + cardPlayerID), (snapshot) => {
+                if (!snapshot.exists()) return
                 if (snapshot.val().userID !== '') {
                     setPlayerName(snapshot.val().name)
                     playerCardDiv.current.style.opacity = '1'
@@ -37,6 +39,7 @@ const PlayerCard = ({ cardPlayerID }) => {
                     playerCardDiv.current.style.opacity = '0'
                 }
             })
+            return unsubscribe
         }
     }, [lobby, playerID, cardPlayerID])
 
@@ -56,10 +59,10 @@ const PlayerCard = ({ cardPlayerID }) => {
 
     return (
         <div className='playerCard' ref={playerCardDiv}>
-            {isCurrentPlayer.current ?
+            {cardPlayerID === playerID ?
                 <input className='playerNameText' name='playerNameText' type='text'
                     value={playerName} onChange={e => playerNameHandleChange(e.target.value)}
-                    onBlur={e => newNameSubmit()}
+                    onBlur={e => newNameSubmit()} onKeyDown={e => {if (e.key === 'Enter') e.target.blur()}}
                 />
             :
                 <p className='playerNameText'>

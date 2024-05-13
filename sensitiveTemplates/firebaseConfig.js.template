@@ -14,7 +14,7 @@
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app"
-import { getDatabase, set, get, ref } from "firebase/database"
+import { getDatabase, set, get, remove, ref } from "firebase/database"
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth"
 
 // Your web app's Firebase configuration
@@ -46,8 +46,8 @@ onAuthStateChanged(auth, (user) => {
 export const createNewLobby = async (lobbyID) => {
     await set(ref(database, getLobbyRef(lobbyID)), {
         gameEvent: '', // signal event to players
-        playerNum: 1,
         players: {
+            playerNum: 1,
             1: {
                 userID: userID,
                 name: 'Player 1',
@@ -92,7 +92,6 @@ export const createNewLobby = async (lobbyID) => {
 
 // Called by clicking the "Join Lobby" button in StartScreen. Returns the
 // number of the player, or -1 if the lobby could not be joined.
-// TODO: Handle player joining BACK into a lobby
 export const joinLobby = async (lobbyID) => {
     let player = -1
 
@@ -107,17 +106,48 @@ export const joinLobby = async (lobbyID) => {
             }
             // If the player is not found already in the lobby
             if (player === -1) {
-                let players = game.playerNum
+                let players = game.players.playerNum
                 if (players < 4) {
                     player = players + 1
                     set(ref(database, getLobbyRef(lobbyID) + '/players/' + player + '/userID'), userID)
-                    set(ref(database, getLobbyRef(lobbyID) + '/playerNum'), player)
+                    set(ref(database, getLobbyRef(lobbyID) + '/players/playerNum'), player)
                 }
             }
         }
     })
 
     return player
+}
+
+// Remove a specified player from a specified lobby
+export const removeFromLobby = async (lobbyID, playerID) => {
+    let playersRef = ref(database, getLobbyRef(lobbyID) + '/players')
+    get(playersRef).then((snapshot) => {
+            let playersObject = snapshot.val()
+
+            // Shift the players down
+            for (let i = playerID; i < 4; i++) {
+                playersObject[i] = playersObject[i+1]
+                if (playersObject[i].name === `Player ${i+1}`) {
+                    playersObject[i].name = `Player ${i}`
+                }
+            }
+            // Reset player 4
+            playersObject[4] = {
+                userID: '',
+                name: 'Player 4',
+                ready: false
+            }
+            // Update database with new players object
+            playersObject.playerNum--
+            set(playersRef, playersObject)
+        }
+    )
+}
+
+// Deletes the lobby and boots all connected players
+export const deleteLobby = async (lobbyID) => {
+    remove(ref(database, getLobbyRef(lobbyID)))
 }
 
 // Gets all the currently available data about a game/lobby
