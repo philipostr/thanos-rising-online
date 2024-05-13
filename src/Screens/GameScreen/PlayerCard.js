@@ -47,11 +47,18 @@ const PlayerCard = ({ cardPlayerID }) => {
         }
     }
 
+    const playerNameHandleChange = (newName) => {
+        if (newName.length <= 20) {
+            nameChange.current = true
+            setPlayerName(newName)
+        }
+    }
+
     return (
         <div className='playerCard' ref={playerCardDiv}>
             {isCurrentPlayer.current ?
                 <input className='playerNameText' name='playerNameText' type='text'
-                    value={playerName} onChange={e => {nameChange.current = true; setPlayerName(e.target.value)}}
+                    value={playerName} onChange={e => playerNameHandleChange(e.target.value)}
                     onBlur={e => newNameSubmit()}
                 />
             :
