@@ -18,7 +18,7 @@ const PlayerCard = ({ cardPlayerID }) => {
     useEffect(() => {
         if (cardPlayerID === playerID) {
             // Only fetch name once in case of rejoining
-            get(ref(database, getLobbyRef(lobby) + "/players/" + cardPlayerID)).then((snapshot) => {
+            get(ref(database, `${getLobbyRef(lobby)}/players/${cardPlayerID}`)).then((snapshot) => {
                 if (snapshot.val().userID !== '') {
                     setPlayerName(snapshot.val().name)
                     playerCardDiv.current.style.opacity = '1'
@@ -29,7 +29,7 @@ const PlayerCard = ({ cardPlayerID }) => {
             })
         } else {
             // Continuously check for changes in the other players' names
-            let unsubscribe = onValue(ref(database, getLobbyRef(lobby) + "/players/" + cardPlayerID), (snapshot) => {
+            let unsubscribe = onValue(ref(database, `${getLobbyRef(lobby)}/players/${cardPlayerID}`), (snapshot) => {
                 if (!snapshot.exists()) return
                 if (snapshot.val().userID !== '') {
                     setPlayerName(snapshot.val().name)
@@ -45,7 +45,7 @@ const PlayerCard = ({ cardPlayerID }) => {
 
     const newNameSubmit = async () => {
         if (nameChange.current) {
-            set(ref(database, getLobbyRef(lobby) + '/players/' + playerID + '/name'), playerName)
+            set(ref(database, `${getLobbyRef(lobby)}/players/${playerID}/name`), playerName)
             nameChange.current = false
         }
     }

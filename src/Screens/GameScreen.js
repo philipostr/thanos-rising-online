@@ -16,7 +16,7 @@ const GameScreen = ({ initialPlayerID }) => {
 
     // On playerID changed, listen to other players leaving and adjust accordingly (or player was kicked)
     useEffect(() => {
-        const unsubscribe = onValue(ref(database, getLobbyRef(lobby) + '/players'), (snapshot) => {
+        const unsubscribe = onValue(ref(database, `${getLobbyRef(lobby)}/players`), (snapshot) => {
             if (snapshot.exists()) {
                 if (snapshot.val()[playerID].userID !== userID) {
                     for (let i = playerID; i > 0; i--) {

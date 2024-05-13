@@ -109,8 +109,8 @@ export const joinLobby = async (lobbyID) => {
                 let players = game.players.playerNum
                 if (players < 4) {
                     player = players + 1
-                    set(ref(database, getLobbyRef(lobbyID) + '/players/' + player + '/userID'), userID)
-                    set(ref(database, getLobbyRef(lobbyID) + '/players/playerNum'), player)
+                    set(ref(database, `${getLobbyRef(lobbyID)}/players/${player}/userID`), userID)
+                    set(ref(database, `${getLobbyRef(lobbyID)}/players/playerNum`), player)
                 }
             }
         }
@@ -121,7 +121,7 @@ export const joinLobby = async (lobbyID) => {
 
 // Remove a specified player from a specified lobby
 export const removeFromLobby = async (lobbyID, playerID) => {
-    let playersRef = ref(database, getLobbyRef(lobbyID) + '/players')
+    let playersRef = ref(database, `${getLobbyRef(lobbyID)}/players`)
     get(playersRef).then((snapshot) => {
             let playersObject = snapshot.val()
 
@@ -162,5 +162,5 @@ export const getGameObject = async (lobbyID) => {
 
 // Returns database reference string to the given lobby
 export const getLobbyRef = (lobbyID) => {
-    return 'games/' + lobbyID
+    return `games/${lobbyID}`
 }
