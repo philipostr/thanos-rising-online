@@ -17,6 +17,9 @@ import { initializeApp } from "firebase/app"
 import { getDatabase, set, get, remove, ref } from "firebase/database"
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth"
 
+import { shuffleArray } from "util"
+import { roles } from "gameContexts"
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
     <TEMPLATE>
@@ -44,32 +47,38 @@ onAuthStateChanged(auth, (user) => {
 // Called by clicking the "Create lobby" button in StartScreen.
 // Returns true if the lobby creation was successful, false otherwise.
 export const createNewLobby = async (lobbyID) => {
+    let randomRoles = shuffleArray(roles)
     await set(ref(database, getLobbyRef(lobbyID)), {
         gameEvent: '', // signal event to players
+        state: 0, // 0: game waiting, 1: game starting, 2: game started, 3: game ended
         players: {
             playerNum: 1,
             1: {
                 userID: userID,
                 name: 'Player 1',
                 cards: {}, // cards in the players hand
+                role: randomRoles[0],
                 ready: false // signal that the player has received event (confirmation = toggle, not true)
             },
             2: {
                 userID: '',
                 name: 'Player 2',
                 cards: {}, // cards in the players hand
+                role: randomRoles[1],
                 ready: false // signal that the player has received event (confirmation = toggle, not true)
             },
             3: {
                 userID: '',
                 name: 'Player 3',
                 cards: {}, // cards in the players hand
+                role: randomRoles[2],
                 ready: false // signal that the player has received event (confirmation = toggle, not true)
             },
             4: {
                 userID: '',
                 name: 'Player 4',
                 cards: {}, // cards in the players hand
+                role: randomRoles[3],
                 ready: false // signal that the player has received event (confirmation = toggle, not true)
             }
         },
@@ -78,6 +87,7 @@ export const createNewLobby = async (lobbyID) => {
         absent: {}, // cards that have not yet been added to play
         table: {
             thanos: 1, // what sector thanos is currently looking at
+            playerSector: 0, // what sector the current player is deployed in
             sectors: {
                 1: {}, // cards in sector 1
                 2: {}, // cards in sector 2
@@ -127,17 +137,16 @@ export const removeFromLobby = async (lobbyID, playerID) => {
 
             // Shift the players down
             for (let i = playerID; i < 4; i++) {
+                let oldRole = playersObject[i].role
                 playersObject[i] = playersObject[i+1]
+                playersObject[i].role = oldRole // Otherwise, roles would disappear
                 if (playersObject[i].name === `Player ${i+1}`) {
                     playersObject[i].name = `Player ${i}`
                 }
             }
             // Reset player 4
-            playersObject[4] = {
-                userID: '',
-                name: 'Player 4',
-                ready: false
-            }
+            playersObject[4].userID = ''
+            playersObject[4].name = 'Player 4'
             // Update database with new players object
             playersObject.playerNum--
             set(playersRef, playersObject)

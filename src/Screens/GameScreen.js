@@ -7,9 +7,10 @@ import { database, userID, getLobbyRef } from 'firebaseConfig'
 
 import { LobbyContextApp, PlayerIDContextGameScreen, ErrorMessageContextApp } from 'gameContexts'
 import WaitScreen from './GameScreen/WaitScreen'
+import Game from './GameScreen/Game'
 
 const GameScreen = ({ initialPlayerID }) => {
-    const [started, setStarted] = useState(false)
+    const [gameState, setGameState] = useState(0)
     const [playerID, setPlayerID] = useState(initialPlayerID)
     const [lobby, setLobby] = useContext(LobbyContextApp)
     const setErrMessage = useContext(ErrorMessageContextApp)
@@ -42,17 +43,23 @@ const GameScreen = ({ initialPlayerID }) => {
         return unsubscribe
     }, [playerID, lobby, setLobby, setErrMessage])
 
+    // On component mount, attach listener for the state of the game
+    useEffect(() => {
+        const unsubscribe = onValue(ref(database, `${getLobbyRef(lobby)}/state`), (snapshot) => {
+            if (!snapshot.exists()) return
+            setGameState(snapshot.val())
+        })
+
+        return unsubscribe
+    }, [setGameState, lobby])
+
     return (
         <PlayerIDContextGameScreen.Provider value={playerID}>
             <div id='gameScreen'>
-                { !started ? <WaitScreen startGame={() => setStarted(true)} /> :
-                    <p>
-                        here is the game
-                    </p>
-                }
+                {gameState <= 1 && <WaitScreen starting={gameState === 1} />}
+                {gameState >= 1 && <Game gameState={gameState} />}
             </div>
         </PlayerIDContextGameScreen.Provider>
-        
     )
 }
 

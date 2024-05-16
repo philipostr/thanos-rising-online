@@ -22,6 +22,11 @@ export const PlayerIDContextGameScreen = createContext()
 /* =========================================
    =========== Provided in Game ============ 
    ========================================= */
+// Overall information about a game and a lobby that will no longer be changed
+// in the duration of the game. Consider this a constant, and it will never
+// cause rerenders.
+// {lobbyID: int, lobbyRefString: string, playerID: int, roles: {1:string, 2:string, 3:string, 4:string}}
+export const FinalGameDataContextGame = createContext()
 
 
 /* =========================================
