@@ -7,6 +7,7 @@ import { database, getLobbyRef, getGameObject } from 'firebaseConfig'
 
 import { PlayerIDContextGameScreen, FinalGameDataContextGame, LobbyContextApp, stoneColours } from 'gameContexts'
 import { randFromArray } from 'util'
+import useWaitableState from 'hooks/useWaitableState'
 
 const dataListener = (finalGameData, path, action) => {
     return onValue(child(finalGameData.current.lobbyRef, path), (snapshot) => {
@@ -22,29 +23,13 @@ const Game = () => {
     const [isMyTurn, setIsMyTurn] = useState(false)
     // Steps/phases of a player's turn. Used by subcomponents to know
     // when and how to act differently
-    const [step, setStep] = useState(0)
+    const [, setStep] = useState(0)
     // Is used for context FinalGameDataContextGame
     const finalGameData = useRef(null)
 
-    /* Is updated by listeners, and are used by both steps AND subcomponents.
-       These states should be accompanied by a useEffect, and value ref that
-       is updated in the effect, and a resolve ref that is called in the
-       effect to resolve any promise waiting for a change in value */
-    const [playerSector, setPlayerSector] = useState(0)                    // \       
-    const playerSectorVal = useRef(0)                                      //  |
-    const playerSectorResolve = useRef(null)                               //  |
-    useEffect(() => {                                                      //   > playerSector
-        playerSectorVal.current = playerSector                             //  |
-        if (playerSectorResolve.current) playerSectorResolve.current()     //  |
-    }, [playerSector])                                                     // /
-
-    const [infinityStones, setInfinityStones] = useState(null)             // \       
-    const infinityStonesVal = useRef(null)                                 //  |
-    const infinityStonesResolve = useRef(null)                             //  |
-    useEffect(() => {                                                      //   > infinityStones
-        infinityStonesVal.current = infinityStones                         //  |
-        if (infinityStonesResolve.current) infinityStonesResolve.current() //  |
-    }, [infinityStones])                                                   // /
+    /* Is updated by listeners, and are used by both steps AND subcomponents */
+    const [, setPlayerSector, , playerSectorWait] = useWaitableState(0)
+    const [, setInfinityStones, infinityStonesVal] = useWaitableState(null)
 
     // On component mount, initialize the finalGameData object and listeners
     useEffect(() => {
@@ -84,14 +69,15 @@ const Game = () => {
 
         // On component unmount, unsubscribe every listener
         return () => {for (let u of unsubscribers) u()}
-    }, [lobby, playerID])
+    }, [lobby, playerID, setPlayerSector, setInfinityStones])
 
-    // On isMyTurn changes to true, proceed with the current player's turn
+    // On isMyTurn changes to true, proceed with the current player's turn.
+    // Dependency array contains many other values, all of which are stable.
     useEffect(() => { async function anon() {
         if (isMyTurn) {
             /* Step 1 */
             setStep(1)
-            await new Promise((resolve) => playerSectorResolve.current = resolve)
+            await playerSectorWait()
             console.log('Received the new player sector value.')
 
             /* Step 2 */
@@ -112,7 +98,7 @@ const Game = () => {
                 set(child(finalGameData.current.lobbyRef, `table/infinityStones/${step2_stone}`), 5)
             }
         }
-    }; anon()}, [isMyTurn])
+    }; anon()}, [isMyTurn, playerSectorWait, infinityStonesVal])
 
     return (
         <FinalGameDataContextGame.Provider value={finalGameData.current}>
