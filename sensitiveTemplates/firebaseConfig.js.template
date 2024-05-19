@@ -18,7 +18,7 @@ import { getDatabase, set, get, remove, ref } from "firebase/database"
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth"
 
 import { shuffleArray } from "util"
-import { roles } from "gameContexts"
+import { roles, stoneColours } from "gameContexts"
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -87,6 +87,7 @@ export const createNewLobby = async (lobbyID) => {
         absent: {}, // cards that have not yet been added to play
         table: {
             thanos: 1, // what sector thanos is currently looking at
+            infinityStones: Object.fromEntries(stoneColours.map(k => [k, 0])), // progress of stones Thanos possesses
             playerSector: 0, // what sector the current player is deployed in
             sectors: {
                 1: {}, // cards in sector 1

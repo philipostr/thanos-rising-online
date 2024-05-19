@@ -2,10 +2,11 @@ import './Game.css'
 
 import { useContext, useRef, useState, useEffect } from 'react'
 
-import { onValue, ref, child } from 'firebase/database'
+import { onValue, ref, child, set } from 'firebase/database'
 import { database, getLobbyRef, getGameObject } from 'firebaseConfig'
 
-import { PlayerIDContextGameScreen, FinalGameDataContextGame, LobbyContextApp } from 'gameContexts'
+import { PlayerIDContextGameScreen, FinalGameDataContextGame, LobbyContextApp, stoneColours } from 'gameContexts'
+import { randFromArray } from 'util'
 
 const dataListener = (finalGameData, path, action) => {
     return onValue(child(finalGameData.current.lobbyRef, path), (snapshot) => {
@@ -29,13 +30,21 @@ const Game = () => {
        These states should be accompanied by a useEffect, and value ref that
        is updated in the effect, and a resolve ref that is called in the
        effect to resolve any promise waiting for a change in value */
-    const [playerSector, setPlayerSector] = useState(0)
-    const playerSectorVal = useRef(0)
-    const playerSectorResolve = useRef(null)
-    useEffect(() => {
-        playerSectorVal.current = playerSector
-        if (playerSectorResolve.current) playerSectorResolve.current()
-    }, [playerSector])
+    const [playerSector, setPlayerSector] = useState(0)                    // \       
+    const playerSectorVal = useRef(0)                                      //  |
+    const playerSectorResolve = useRef(null)                               //  |
+    useEffect(() => {                                                      //   > playerSector
+        playerSectorVal.current = playerSector                             //  |
+        if (playerSectorResolve.current) playerSectorResolve.current()     //  |
+    }, [playerSector])                                                     // /
+
+    const [infinityStones, setInfinityStones] = useState(null)             // \       
+    const infinityStonesVal = useRef(null)                                 //  |
+    const infinityStonesResolve = useRef(null)                             //  |
+    useEffect(() => {                                                      //   > infinityStones
+        infinityStonesVal.current = infinityStones                         //  |
+        if (infinityStonesResolve.current) infinityStonesResolve.current() //  |
+    }, [infinityStones])                                                   // /
 
     // On component mount, initialize the finalGameData object and listeners
     useEffect(() => {
@@ -67,6 +76,9 @@ const Game = () => {
             }),
             dataListener(finalGameData, 'table/playerSector', (val) => {
                 setPlayerSector(val)
+            }),
+            dataListener(finalGameData, 'table/infinityStones', (val) => {
+                setInfinityStones(val)
             })
         ]
 
@@ -80,7 +92,25 @@ const Game = () => {
             /* Step 1 */
             setStep(1)
             await new Promise((resolve) => playerSectorResolve.current = resolve)
-            console.log('Received the new player sector value.');
+            console.log('Received the new player sector value.')
+
+            /* Step 2 */
+            setStep(2)
+            let step2_stone = randFromArray(stoneColours)
+            let step2_stoneAchieved = false
+            // If rolled infinity stone has already been achieved
+            if (infinityStonesVal.current[step2_stone] === 5) {
+                step2_stoneAchieved = true
+                console.log('Activate infinity stone effect for the round')
+            }
+            await set(child(finalGameData.current.lobbyRef, `table/infinityStones/${step2_stone}`),
+                infinityStonesVal.current[step2_stone] + 1
+            )
+
+            /* End of turn cleanup */
+            if (step2_stoneAchieved) {
+                set(child(finalGameData.current.lobbyRef, `table/infinityStones/${step2_stone}`), 5)
+            }
         }
     }; anon()}, [isMyTurn])
 

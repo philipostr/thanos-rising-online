@@ -33,3 +33,4 @@ export const FinalGameDataContextGame = createContext()
    ======== Game-Related Constants ========= 
    ========================================= */
 export const roles = ['red', 'blue', 'green', 'purple']
+export const stoneColours = ['orange', 'red', 'blue', 'purple', 'green', 'yellow']
