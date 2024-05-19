@@ -57,7 +57,7 @@ const GameScreen = ({ initialPlayerID }) => {
         <PlayerIDContextGameScreen.Provider value={playerID}>
             <div id='gameScreen'>
                 {gameState <= 1 && <WaitScreen starting={gameState === 1} />}
-                {gameState >= 1 && <Game gameState={gameState} />}
+                {gameState === 2 && <Game />}
             </div>
         </PlayerIDContextGameScreen.Provider>
     )
