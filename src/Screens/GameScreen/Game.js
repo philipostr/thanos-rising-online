@@ -7,6 +7,7 @@ import { database, getLobbyRef, getGameObject } from 'firebaseConfig'
 
 import { PlayerIDContextGameScreen, FinalGameDataContextGame, LobbyContextApp, stoneColours } from 'gameContexts'
 import { randFromArray } from 'util'
+import { assetCards, AbilityEvent, getValidInSector } from 'AssetInfo'
 import useWaitableState from 'hooks/useWaitableState'
 
 const dataListener = (finalGameData, path, action) => {
@@ -28,7 +29,7 @@ const Game = () => {
     const finalGameData = useRef(null)
 
     /* Is updated by listeners, and are used by both steps AND subcomponents */
-    const [, setPlayerSector, , playerSectorWait] = useWaitableState(0)
+    const [, setPlayerSector, playerSectorVal, playerSectorWait] = useWaitableState(0)
     const [, setInfinityStones, infinityStonesVal, ] = useWaitableState(null)
     const [, setThanos, thanosVal, ] = useWaitableState(1)
     const [, setSector1, , ] = useWaitableState(null)
@@ -106,6 +107,8 @@ const Game = () => {
     // Dependency array contains many other values, all of which are stable.
     useEffect(() => { async function anon() {
         if (isMyTurn) {
+            let game
+
             /* Step 1 */
             setStep(1)
             await playerSectorWait()
@@ -118,6 +121,7 @@ const Game = () => {
 
             /* Step 3 */
             setStep(3)
+            // Start of rolling Thanos die
             const step3_action = Math.floor(Math.random()*6)
             let step3_thanos = thanosVal.current
             var step3_stone, step3_stoneAchieved
@@ -131,13 +135,48 @@ const Game = () => {
                 if (++step3_thanos === 4) step3_thanos = 1
                 await set(child(finalGameData.current.lobbyRef, 'table/thanos'), step3_thanos)
                 console.log('Turned Thanos CW')
-            } else if (step3_action === 4) {
-                console.log('Activate villain abilities in other sectors')
             } else if (step3_action === 5) {
                 [step3_stone, step3_stoneAchieved] = await rollStoneDie()
                 console.log(`Increased counter for ${step3_stone} stone. Was ${step3_stoneAchieved ? '' : 'not'} activated`)
             }
-            console.log('Activate villain abilities in current sector')
+            // End of rolling Thanos die
+            // Start of activating villain abilities
+            game = await getGameObject(finalGameData.current.lobbyID)
+            if (step3_action === 4) {
+                // Activate villain abilities of every sector
+                for (let s = 1; s <= 3; s++) {
+                    const args = {
+                        sector: s,
+                        lobbyRef: finalGameData.current.lobbyRef
+                    }
+                    let validAbilities = getValidInSector(game, AbilityEvent.VILLAIN, args)
+                    for (let c of validAbilities) {
+                        await assetCards[c].activate(game, args)
+                    }
+                }
+                console.log('Activated villain abilities in every sector')
+            } else {
+                // Activate villain abilities only in Thanos's sector
+                const args = {
+                    sector: thanosVal.current,
+                    lobbyRef: finalGameData.current.lobbyRef
+                }
+                let validAbilities = getValidInSector(game, AbilityEvent.VILLAIN, args)
+                for (let c of validAbilities) {
+                    await assetCards[c].activate(game, args)
+                }
+                console.log('Activated villain abilities in current sector')
+            }
+            // End of activating villain abilities
+            // Start of damaging heroes in current sector
+            for (let c of [...game.table.sectors[step3_thanos],
+                ...(playerSectorVal === step3_thanos ? game.players[playerID].cards : [])]) {
+                    if (assetCards[c].type !== 'villain' && game.cards[c].health > 0) {
+                        await set(child(finalGameData.current.lobbyRef, `cards/${c}/health`), --game.cards[c].health)
+                    }
+            }
+            console.log('Thanos attacked all heroes in his sector')
+            // End of damaging heroes in current sector
 
             /* End of turn cleanup */
             if (step2_stoneAchieved) {
@@ -147,7 +186,7 @@ const Game = () => {
                 set(child(finalGameData.current.lobbyRef, `table/infinityStones/${step3_stone}`), 5)
             }
         }
-    }; anon()}, [isMyTurn, playerSectorWait, rollStoneDie, thanosVal])
+    }; anon()}, [isMyTurn, playerID, playerSectorWait, rollStoneDie, thanosVal, playerSectorVal])
 
     return (
         <FinalGameDataContextGame.Provider value={finalGameData.current}>
