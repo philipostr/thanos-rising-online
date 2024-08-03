@@ -107,7 +107,21 @@ const Game = () => {
     // Dependency array contains many other values, all of which are stable.
     useEffect(() => { async function anon() {
         if (isMyTurn) {
-            let game
+            let game = await getGameObject(finalGameData.current.lobbyID)
+            
+            // Used to hold all possible arguments that card activations may need
+            const args = {
+                sector: 1, // sector of the card being activated. Must be set properly each time
+                lobbyID: finalGameData.current.lobbyID,
+                lobbyRef: finalGameData.current.lobbyRef
+            }
+
+            for (let c of getValidInSector(game, AbilityEvent.VILLAIN, args)) {
+                await assetCards[c].activate(game, args)
+            }
+
+            // Just to ignore all actual steps while testing card abilities in isolation
+            return
 
             /* Step 1 */
             setStep(1)
@@ -157,10 +171,6 @@ const Game = () => {
                 console.log('Activated villain abilities in every sector')
             } else {
                 // Activate villain abilities only in Thanos's sector
-                const args = {
-                    sector: thanosVal.current,
-                    lobbyRef: finalGameData.current.lobbyRef
-                }
                 let validAbilities = getValidInSector(game, AbilityEvent.VILLAIN, args)
                 for (let c of validAbilities) {
                     await assetCards[c].activate(game, args)

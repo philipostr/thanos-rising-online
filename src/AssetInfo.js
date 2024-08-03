@@ -1,4 +1,4 @@
-import { set, child } from 'firebase/database'
+import { syncSetGameObject } from 'firebaseConfig'
 
 export const AbilityEvent = Object.freeze({
     VILLAIN: 0, PRE_ROLL: 1, POST_ROLL: 2, POST_DAMAGE: 3
@@ -34,12 +34,156 @@ export const assetCards = [
             for (let c of sectorCards) {
                 if (assetCards[c].type === 'red' || assetCards[c].type === 'blue') {
                     if (game.cards[c].health > 0) {
-                        await set(child(args.lobbyRef, `cards/${c}/health`), --game.cards[c].health)
+                        await syncSetGameObject(args.lobbyID, game, `cards/${c}/health`, game.cards[c].health-1)
                     }
                 }
             }
-            console.log('General Outrider (blue red) ability activated')
+            console.log('General Outrider (red blue) ability activated')
         }
+    },
+    {
+        name: 'General Outrider',
+        maxHP: 2,
+        cost: {combat: 0, tech: 2, mystic: 0, cosmic: 2},
+        type: 'villain',
+        abilityEvent: AbilityEvent.VILLAIN,
+        icon: 'unset',
+        checkValid: (game, args) => {
+            return true
+        },
+        activate: async (game, args) => {
+            let sectorCards = game.table.sectors[args.sector]
+            if (game.table.playerSector === args.sector) {
+                sectorCards.push(...game.players[game.currentPlayer].cards)
+            }
+
+            for (let c of sectorCards) {
+                if (assetCards[c].type === 'blue' || assetCards[c].type === 'purple') {
+                    if (game.cards[c].health > 0) {
+                        await syncSetGameObject(args.lobbyID, game, `cards/${c}/health`, game.cards[c].health-1)
+                    }
+                }
+            }
+            console.log('General Outrider (blue purple) ability activated')
+        }
+    },
+    {
+        name: 'General Outrider',
+        maxHP: 2,
+        cost: {combat: 0, tech: 2, mystic: 2, cosmic: 0},
+        type: 'villain',
+        abilityEvent: AbilityEvent.VILLAIN,
+        icon: 'unset',
+        checkValid: (game, args) => {
+            return true
+        },
+        activate: async (game, args) => {
+            let sectorCards = game.table.sectors[args.sector]
+            if (game.table.playerSector === args.sector) {
+                sectorCards.push(...game.players[game.currentPlayer].cards)
+            }
+
+            for (let c of sectorCards) {
+                if (assetCards[c].type === 'blue' || assetCards[c].type === 'green') {
+                    if (game.cards[c].health > 0) {
+                        await syncSetGameObject(args.lobbyID, game, `cards/${c}/health`, game.cards[c].health-1)
+                    }
+                }
+            }
+            console.log('General Outrider (blue green) ability activated')
+        }
+    },
+    {
+        name: 'General Outrider',
+        maxHP: 2,
+        cost: {combat: 2, tech: 0, mystic: 0, cosmic: 2},
+        type: 'villain',
+        abilityEvent: AbilityEvent.VILLAIN,
+        icon: 'unset',
+        checkValid: (game, args) => {
+            return true
+        },
+        activate: async (game, args) => {
+            let sectorCards = game.table.sectors[args.sector]
+            if (game.table.playerSector === args.sector) {
+                sectorCards.push(...game.players[game.currentPlayer].cards)
+            }
+
+            for (let c of sectorCards) {
+                if (assetCards[c].type === 'red' || assetCards[c].type === 'purple') {
+                    if (game.cards[c].health > 0) {
+                        await syncSetGameObject(args.lobbyID, game, `cards/${c}/health`, game.cards[c].health-1)
+                    }
+                }
+            }
+            console.log('General Outrider (red purple) ability activated')
+        }
+    },
+    {
+        name: 'General Outrider',
+        maxHP: 2,
+        cost: {combat: 2, tech: 0, mystic: 2, cosmic: 0},
+        type: 'villain',
+        abilityEvent: AbilityEvent.VILLAIN,
+        icon: 'unset',
+        checkValid: (game, args) => {
+            return true
+        },
+        activate: async (game, args) => {
+            let sectorCards = game.table.sectors[args.sector]
+            if (game.table.playerSector === args.sector) {
+                sectorCards.push(...game.players[game.currentPlayer].cards)
+            }
+
+            for (let c of sectorCards) {
+                if (assetCards[c].type === 'red' || assetCards[c].type === 'green') {
+                    if (game.cards[c].health > 0) {
+                        await syncSetGameObject(args.lobbyID, game, `cards/${c}/health`, game.cards[c].health-1)
+                    }
+                }
+            }
+            console.log('General Outrider (red green) ability activated')
+        }
+    },
+    {
+        name: 'General Outrider',
+        maxHP: 2,
+        cost: {combat: 0, tech: 0, mystic: 2, cosmic: 2},
+        type: 'villain',
+        abilityEvent: AbilityEvent.VILLAIN,
+        icon: 'unset',
+        checkValid: (game, args) => {
+            return true
+        },
+        activate: async (game, args) => {
+            let sectorCards = game.table.sectors[args.sector]
+            if (game.table.playerSector === args.sector) {
+                sectorCards.push(...game.players[game.currentPlayer].cards)
+            }
+
+            for (let c of sectorCards) {
+                if (assetCards[c].type === 'green' || assetCards[c].type === 'purple') {
+                    if (game.cards[c].health > 0) {
+                        await syncSetGameObject(args.lobbyID, game, `cards/${c}/health`, game.cards[c].health-1)
+                    }
+                }
+            }
+            console.log('General Outrider (green purple) ability activated')
+        }
+    },
+
+    /* TEST ASSETS */
+    {
+        type: 'red'
+    },
+    {
+        type: 'blue'
+    },
+    {
+        type: 'green'
+    },
+    {
+        type: 'purple'
     }
 ]
 
