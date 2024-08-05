@@ -1,11 +1,12 @@
 export const shuffleArray = (array) => {
-    for (let i = array.length - 1; i > 0; i--) {
+    let arrayOut = [...array]
+    for (let i = arrayOut.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
-        const temp = array[i]
-        array[i] = array[j]
-        array[j] = temp
+        const temp = arrayOut[i]
+        arrayOut[i] = arrayOut[j]
+        arrayOut[j] = temp
     }
-    return array
+    return arrayOut
 }
 
 export const randFromArray = (array) => {

@@ -36,7 +36,7 @@ const Game = () => {
     const [, setSector2, , ] = useWaitableState(null)
     const [, setSector3, , ] = useWaitableState(null)
 
-    const rollStoneDie = useCallback(async () => {
+    const rollStoneDie = useCallback(async (game={table: {infinityStones: {}}}) => {
         let stone = randFromArray(stoneColours)
         let stoneAchieved = false
         // If rolled infinity stone has already been achieved
@@ -44,6 +44,7 @@ const Game = () => {
             stoneAchieved = true
             console.log('Activate infinity stone effect for the round')
         }
+        game.table.infinityStones[stone] = infinityStonesVal.current[stone] + 1
         await set(child(finalGameData.current.lobbyRef, `table/infinityStones/${stone}`),
             infinityStonesVal.current[stone] + 1
         )
@@ -113,7 +114,8 @@ const Game = () => {
             const args = {
                 sector: 1, // sector of the card being activated. Must be set properly each time
                 lobbyID: finalGameData.current.lobbyID,
-                lobbyRef: finalGameData.current.lobbyRef
+                lobbyRef: finalGameData.current.lobbyRef,
+                rollStoneDie: rollStoneDie,
             }
 
             for (let c of getValidInSector(game, AbilityEvent.VILLAIN, args)) {
@@ -138,7 +140,7 @@ const Game = () => {
             // Start of rolling Thanos die
             const step3_action = Math.floor(Math.random()*6)
             let step3_thanos = thanosVal.current
-            var step3_stone, step3_stoneAchieved
+            let step3_stone, step3_stoneAchieved
             if (step3_action <= 1) {
                 // Turn Thanos CCW
                 if (--step3_thanos === 0) step3_thanos = 3

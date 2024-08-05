@@ -102,11 +102,11 @@ export const createNewLobby = async (lobbyID) => {
         gameEvent: '', // signal event to players
         state: 0, // 0: game waiting, 1: game starting, 2: game started, 3: game ended
         players: {
-            playerNum: 1,
+            playerNum: 2,
             1: {
                 userID: userID,
                 name: 'Player 1',
-                cards: [6], // cards in the players hand
+                cards: [], // cards in the players hand
                 role: randomRoles[0],
                 ready: false // signal that the player has received event (confirmation = toggle, not true)
             },
@@ -140,13 +140,15 @@ export const createNewLobby = async (lobbyID) => {
             infinityStones: Object.fromEntries(stoneColours.map(k => [k, 0])), // progress of stones Thanos possesses
             playerSector: 1, // what sector the current player is deployed in
             sectors: {
-                1: [0, 1, 7, 8, 9], // cards in sector 1
-                2: [], // cards in sector 2
-                3: [] // cards in sector 3
+                1: [9], // cards in sector 1
+                2: [42, 43, 44], // cards in sector 2
+                3: [45] // cards in sector 3
             }
         },
         cards: [
-            null, null, null, null, null, null,
+            null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
+            null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
+            null,null,null,null,null,null,null,null,
             {health: 3},{health: 3},{health: 3},{health: 3}
         ] // actual information about each card (location is specified in earlier fields)
     })
