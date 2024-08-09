@@ -9,6 +9,7 @@ import { PlayerIDContextGameScreen, FinalGameDataContextGame, LobbyContextApp, s
 import { randFromArray } from 'util'
 import { assetCards, AbilityEvent, getValidInSector } from 'AssetInfo'
 import useWaitableState from 'hooks/useWaitableState'
+import CardSelector from 'Screens/GameScreen/Game/CardSelector'
 
 const dataListener = (finalGameData, path, action) => {
     return onValue(child(finalGameData.current.lobbyRef, path), (snapshot) => {
@@ -25,6 +26,11 @@ const Game = () => {
     // Steps/phases of a player's turn. Used by subcomponents to know
     // when and how to act differently
     const [, setStep] = useState(0)
+    // For activating and using the CardSelector component. When `null`,
+    // CardSelector disappears. Otherwise, CardSelector appears and is
+    // passed `cardSelectorArgs` as the `args` prop. To see available
+    // arguments, refer to `CardSelector.js`
+    const [cardSelectorArgs, setCardSelectorArgs] = useState(null)
     // Is used for context FinalGameDataContextGame
     const finalGameData = useRef(null)
 
@@ -51,6 +57,16 @@ const Game = () => {
 
         return [stone, stoneAchieved]
     }, [infinityStonesVal])
+
+    // Called to activate and use the `CardSelector` component as a makeshift function
+    // that returns a list of selected cards through resolving a promise
+    const activateCardSelector = useCallback(async (args) => {
+        const promise = new Promise((resolve) => args.returner = resolve)
+        setCardSelectorArgs(args)
+        const selection = await promise
+        setCardSelectorArgs(null)
+        return selection
+    }, [])
 
     // On component mount, initialize the finalGameData object and listeners
     useEffect(() => {
@@ -116,11 +132,16 @@ const Game = () => {
                 lobbyID: finalGameData.current.lobbyID,
                 lobbyRef: finalGameData.current.lobbyRef,
                 rollStoneDie: rollStoneDie,
+                activateCardSelector: activateCardSelector,
             }
 
-            for (let c of getValidInSector(game, AbilityEvent.VILLAIN, args)) {
+            /*for (let c of getValidInSector(game, AbilityEvent.VILLAIN, args)) {
                 await assetCards[c].activate(game, args)
-            }
+            }*/
+
+            console.log(await activateCardSelector({
+                game: game, sectors: [1,2,3], villains: true, heroes: true, maxSelect: 4
+            }))
 
             // Just to ignore all actual steps while testing card abilities in isolation
             return
@@ -198,7 +219,7 @@ const Game = () => {
                 set(child(finalGameData.current.lobbyRef, `table/infinityStones/${step3_stone}`), 5)
             }
         }
-    }; anon()}, [isMyTurn, playerID, playerSectorWait, rollStoneDie, thanosVal, playerSectorVal])
+    }; anon()}, [isMyTurn, playerID, playerSectorWait, rollStoneDie, thanosVal, playerSectorVal, activateCardSelector])
 
     return (
         <FinalGameDataContextGame.Provider value={finalGameData.current}>
@@ -206,6 +227,9 @@ const Game = () => {
                 <p>
                     This is the game!
                 </p>
+                {cardSelectorArgs && 
+                    <CardSelector args={cardSelectorArgs}></CardSelector>
+                }
             </div>
         </FinalGameDataContextGame.Provider>
     )
