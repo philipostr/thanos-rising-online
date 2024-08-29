@@ -3,13 +3,19 @@ import './Game.css'
 import { useContext, useRef, useState, useEffect, useCallback } from 'react'
 
 import { onValue, ref, child, set } from 'firebase/database'
-import { database, getLobbyRef, getGameObject } from 'firebaseConfig'
+import { database, getLobbyRef, getGameObject, syncSetGameObject } from 'firebaseConfig'
 
-import { PlayerIDContextGameScreen, FinalGameDataContextGame, LobbyContextApp, stoneColours } from 'gameContexts'
+import { PlayerIDContextGameScreen, FinalGameDataContextGame, LobbyContextApp, stoneColours, bonusTokens } from 'gameContexts'
 import { randFromArray } from 'util'
-import { assetCards, AbilityEvent, getValidInSector } from 'AssetInfo'
+import { assetCards, AbilityEvent, getValidInSector, checkValid, activate } from 'AssetInfo'
 import useWaitableState from 'hooks/useWaitableState'
+import useCallableComponentActivator from 'hooks/useCallableComponentActivator'
 import CardSelector from 'Screens/GameScreen/Game/CardSelector'
+import DiceSelector from 'Screens/GameScreen/Game/DiceSelector'
+import FaceChanger from 'Screens/GameScreen/Game/FaceChanger'
+import FaceSelector from 'Screens/GameScreen/Game/FaceSelector'
+import StoneViewer from 'Screens/GameScreen/Game/StoneViewer'
+import TokenSelector from 'Screens/GameScreen/Game/TokenSelector'
 
 const dataListener = (finalGameData, path, action) => {
     return onValue(child(finalGameData.current.lobbyRef, path), (snapshot) => {
@@ -19,6 +25,10 @@ const dataListener = (finalGameData, path, action) => {
     })
 }
 
+const drawToken = async (lobbyID, game) => {
+    await syncSetGameObject(lobbyID, game, 'tokens', [...game.tokens, randFromArray(bonusTokens)])
+}
+
 const Game = () => {
     const playerID = useContext(PlayerIDContextGameScreen)
     const [lobby] = useContext(LobbyContextApp)
@@ -26,11 +36,19 @@ const Game = () => {
     // Steps/phases of a player's turn. Used by subcomponents to know
     // when and how to act differently
     const [, setStep] = useState(0)
-    // For activating and using the CardSelector component. When `null`,
-    // CardSelector disappears. Otherwise, CardSelector appears and is
-    // passed `cardSelectorArgs` as the `args` prop. To see available
-    // arguments, refer to `CardSelector.js`
-    const [cardSelectorArgs, setCardSelectorArgs] = useState(null)
+    // For activating and using the CardSelector component
+    const [cardSelectorArgs, activateCardSelector] = useCallableComponentActivator()
+    // For activating and using the DiceSelector component
+    const [diceSelectorArgs, activateDiceSelector] = useCallableComponentActivator()
+    // For activating and using the FaceChanger component
+    const [faceChangerArgs, activateFaceChanger] = useCallableComponentActivator()
+    // For activating and using the FaceSelector component
+    const [faceSelectorArgs, activateFaceSelector] = useCallableComponentActivator()
+    // For activating and using the StoneViewer component
+    const [stoneViewerArgs, activateStoneViewer] = useCallableComponentActivator()
+    // For activating and using the TokenSelector component
+    const [tokenSelectorArgs, activateTokenSelector] = useCallableComponentActivator()
+
     // Is used for context FinalGameDataContextGame
     const finalGameData = useRef(null)
 
@@ -58,15 +76,37 @@ const Game = () => {
         return [stone, stoneAchieved]
     }, [infinityStonesVal])
 
-    // Called to activate and use the `CardSelector` component as a makeshift function
-    // that returns a list of selected cards through resolving a promise
-    const activateCardSelector = useCallback(async (args) => {
-        const promise = new Promise((resolve) => args.returner = resolve)
-        setCardSelectorArgs(args)
-        const selection = await promise
-        setCardSelectorArgs(null)
-        return selection
-    }, [])
+    // `diceToRoll` is an array of which dice in `game.turn.face` to roll/reroll.
+    // Do not be deceived and use `game.turn.dice`.
+    const rollPowerDice = useCallback(async (game, diceToRoll) => {
+        const faces = game.turn.faces
+
+        for (let die of diceToRoll) {
+            const possibleFaces = ['combat', 'tech', 'mystic', 'cosmic']
+            switch (faces[die].colour) {
+                case 'red':
+                    possibleFaces.push('combat', 'combat2')
+                    break;
+                case 'blue':
+                    possibleFaces.push('tech', 'tech2')
+                    break;
+                case 'green':
+                    possibleFaces.push('mystic', 'mystic2')
+                    break;
+                case 'purple':
+                    possibleFaces.push('cosmic', 'cosmic2')
+                    break;
+                default:
+                    break;
+            }
+            // To not roll the same face
+            const currFacePos = possibleFaces.indexOf(faces[die].face)
+            if (currFacePos !== -1) possibleFaces.splice(currFacePos, 1)
+            faces[die].face = randFromArray(possibleFaces)
+        }
+        
+        await syncSetGameObject(lobby, game, 'turn/faces', faces)
+    }, [lobby])
 
     // On component mount, initialize the finalGameData object and listeners
     useEffect(() => {
@@ -126,27 +166,33 @@ const Game = () => {
         if (isMyTurn) {
             let game = await getGameObject(finalGameData.current.lobbyID)
             
-            // Used to hold all possible arguments that card activations may need
+            // Used to hold all possible arguments that card activations may need.
+            // Also includes the `id` of the card being called, but is set by
+            // `activate` and `checkValid` automatically
             const args = {
                 sector: 1, // sector of the card being activated. Must be set properly each time
                 lobbyID: finalGameData.current.lobbyID,
                 lobbyRef: finalGameData.current.lobbyRef,
                 rollStoneDie: rollStoneDie,
+                rollPowerDice: rollPowerDice,
                 activateCardSelector: activateCardSelector,
+                activateDiceSelector: activateDiceSelector,
+                activateFaceChanger: activateFaceChanger,
+                activateFaceSelector: activateFaceSelector,
+                activateStoneViewer: activateStoneViewer,
+                activateTokenSelector: activateTokenSelector,
+                drawToken: drawToken,
             }
 
-            /*for (let c of getValidInSector(game, AbilityEvent.VILLAIN, args)) {
-                await assetCards[c].activate(game, args)
-            }*/
-
-            console.log(await activateCardSelector({
-                game: game, sectors: [1,2,3], villains: true, heroes: true, maxSelect: 4
-            }))
+            if (checkValid(24, game, args)) {
+                await activate(24, game, args)
+            }
 
             // Just to ignore all actual steps while testing card abilities in isolation
             return
 
             /* Step 1 */
+            // eslint-disable-next-line
             setStep(1)
             await playerSectorWait()
             console.log('Received the new player sector value')
@@ -188,7 +234,7 @@ const Game = () => {
                     }
                     let validAbilities = getValidInSector(game, AbilityEvent.VILLAIN, args)
                     for (let c of validAbilities) {
-                        await assetCards[c].activate(game, args)
+                        await activate(c, game, args)
                     }
                 }
                 console.log('Activated villain abilities in every sector')
@@ -196,7 +242,7 @@ const Game = () => {
                 // Activate villain abilities only in Thanos's sector
                 let validAbilities = getValidInSector(game, AbilityEvent.VILLAIN, args)
                 for (let c of validAbilities) {
-                    await assetCards[c].activate(game, args)
+                    await activate(c, game, args)
                 }
                 console.log('Activated villain abilities in current sector')
             }
@@ -219,7 +265,8 @@ const Game = () => {
                 set(child(finalGameData.current.lobbyRef, `table/infinityStones/${step3_stone}`), 5)
             }
         }
-    }; anon()}, [isMyTurn, playerID, playerSectorWait, rollStoneDie, thanosVal, playerSectorVal, activateCardSelector])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }; anon()}, [isMyTurn])
 
     return (
         <FinalGameDataContextGame.Provider value={finalGameData.current}>
@@ -228,7 +275,22 @@ const Game = () => {
                     This is the game!
                 </p>
                 {cardSelectorArgs && 
-                    <CardSelector args={cardSelectorArgs}></CardSelector>
+                    <CardSelector args={cardSelectorArgs} />
+                }
+                {diceSelectorArgs &&
+                    <DiceSelector args={diceSelectorArgs} />
+                }
+                {faceChangerArgs &&
+                    <FaceChanger args={faceChangerArgs} />
+                }
+                {faceSelectorArgs &&
+                    <FaceSelector args={faceSelectorArgs} />
+                }
+                {stoneViewerArgs &&
+                    <StoneViewer args={stoneViewerArgs} />
+                }
+                {tokenSelectorArgs &&
+                    <TokenSelector args={tokenSelectorArgs} />
                 }
             </div>
         </FinalGameDataContextGame.Provider>

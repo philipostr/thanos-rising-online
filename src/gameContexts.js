@@ -34,3 +34,5 @@ export const FinalGameDataContextGame = createContext()
    ========================================= */
 export const roles = ['red', 'blue', 'green', 'purple']
 export const stoneColours = ['orange', 'red', 'blue', 'purple', 'green', 'yellow']
+export const bonusTokens = ['red', 'blue', 'green', 'purple', 'combat', 'tech', 'mystic',
+   'cosmic', '2heal', 'counter']

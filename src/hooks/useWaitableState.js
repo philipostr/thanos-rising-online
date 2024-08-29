@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 
-/* Used to create a state with the following properties:
+/* 
+   Used to create a state with the following properties:
     - Has initial value of `initialVal`
     - None of the returned values (except `state`) will cause rerenders,
       and can be safely added to dependency lists without extra reruns/rerenders

@@ -18,6 +18,8 @@ import { getDatabase, set, get, remove, ref } from "firebase/database"
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth"
 
 import { shuffleArray } from "util"
+// REMOVE AFTER TESTING
+// eslint-disable-next-line no-unused-vars
 import { roles, stoneColours } from "gameContexts"
 
 // Your web app's Firebase configuration
@@ -82,7 +84,7 @@ export const createNewLobby = async (lobbyID) => {
         //         ready: false // signal that the player has received event (confirmation = toggle, not true)
         //     }
         // },
-        // turn: 0,
+        // turnNum: 0,
         // currentPlayer: 1,
         // absent: [], // cards that have not yet been added to play
         // table: {
@@ -106,7 +108,7 @@ export const createNewLobby = async (lobbyID) => {
             1: {
                 userID: userID,
                 name: 'Player 1',
-                cards: [], // cards in the players hand
+                cards: [13, 43], // cards in the players hand
                 role: randomRoles[0],
                 ready: false // signal that the player has received event (confirmation = toggle, not true)
             },
@@ -132,25 +134,53 @@ export const createNewLobby = async (lobbyID) => {
                 ready: false // signal that the player has received event (confirmation = toggle, not true)
             }
         },
-        turn: 0,
+        turnNum: 0,
         currentPlayer: 1,
         absent: [], // cards that have not yet been added to play
         table: {
             thanos: 1, // what sector thanos is currently looking at
-            infinityStones: Object.fromEntries(stoneColours.map(k => [k, 0])), // progress of stones Thanos possesses
+            infinityStones: {
+                'orange': 1,
+                'red': 1,
+                'blue': 1,
+                'purple': 0,
+                'green': 0,
+                'yellow': 0
+            },
             playerSector: 1, // what sector the current player is deployed in
             sectors: {
-                1: [9], // cards in sector 1
-                2: [42, 43, 44], // cards in sector 2
-                3: [45] // cards in sector 3
+                1: [42, 43, 44, 45], // cards in sector 1
+                2: [], // cards in sector 2
+                3: [] // cards in sector 3
             }
         },
         cards: [
-            null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
+            null,null,null,null,null,null,null,null,null,null,null,null,null,null,{health: 0},null,null,
             null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
             null,null,null,null,null,null,null,null,
-            {health: 3},{health: 3},{health: 3},{health: 3}
-        ] // actual information about each card (location is specified in earlier fields)
+            {health: 2},{health: 2},{health: 2},{health: 3}
+        ],
+        tokens: [
+            '2heal'
+        ],
+        turn: {
+            dice: {
+                red: 0,
+                blue: 0,
+                green: 0,
+                purple: 0
+            },
+            faces: [
+                {colour: 'red', face: 'combat2'},
+                {colour: 'blue', face: 'tech2'},
+                {colour: 'purple', face: 'cosmic'},
+                {colour: 'green', face: 'combat'}
+            ],
+            values: {
+                combat: 1,
+            },
+            damageDealt: 2
+        }
     })
 
     return true
