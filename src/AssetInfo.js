@@ -282,6 +282,7 @@ export const assetCards = [
 
             if (selection.length === 1) {
                 await changeCardHealth(args.lobbyID, game, selection[0], 1)
+                await syncSetGameObject(args.lobbyID, game, 'turn/values/combat', game.turn.values.combat-2)
             }
             
             console.log('Black Widow ability activated')
@@ -313,6 +314,7 @@ export const assetCards = [
 
             if (selection.length === 1) {
                 await changeCardHealth(args.lobbyID, game, selection[0], 2)
+                await syncSetGameObject(args.lobbyID, game, 'turn/values/mystic', game.turn.values.mystic-1)
             }
 
             console.log('Mantis ability activated')
@@ -576,6 +578,7 @@ export const assetCards = [
 
             if (selection.length === 1) {
                 await changeCardHealth(args.lobbyID, game, selection[0], 2)
+                await syncSetGameObject(args.lobbyID, game, 'turn/values/cosmic', game.turn.values.cosmic-1)
             }
 
             console.log('Groot ability activated')
@@ -627,6 +630,7 @@ export const assetCards = [
 
             if (selection !== '') {
                 await syncSetGameObject(args.lobbyID, game, `table/infinityStones/${selection}`, game.table.infinityStones[selection]-1)
+                await syncSetGameObject(args.lobbyID, game, 'turn/values/tech', game.turn.values.tech-2)
             }
 
             console.log('Iron Man ability activated')
@@ -730,6 +734,7 @@ export const assetCards = [
 
             if (selection.length === 1) {
                 syncSetGameObject(args.lobbyID, game, 'tokens', [...game.tokens, selection[0]])
+                await syncSetGameObject(args.lobbyID, game, 'turn/values/tech', game.turn.values.tech-1)
             }
 
             console.log('Shuri ability activated')
@@ -1073,6 +1078,7 @@ export const assetCards = [
 
             if (selection.length === 1) {
                 await changeCardHealth(args.lobbyID, game, selection[0], -1)
+                await syncSetGameObject(args.lobbyID, game, 'turn/values/mystic', game.turn.values.mystic-2)
             }
 
             console.log('Heimdall ability activated')
@@ -1106,40 +1112,8 @@ export const assetCards = [
 
             console.log('Nebula ability activated')
         }
-    },
-
-    /* TEST ASSETS */
-    {
-        type: 'red',
-        maxHP: 3
-    },
-    {
-        type: 'blue',
-        maxHP: 3
-    },
-    {
-        type: 'green',
-        maxHP: 3
-    },
-    {
-        type: 'purple',
-        maxHP: 3
     }
 ]
-
-const changeCardHealth = async (lobbyID, game, card, healthChange) => {
-    let newHealth = game.cards[card].health + healthChange
-    if (newHealth > assetCards[card].maxHP) {
-        newHealth = assetCards[card].maxHP
-    } else if (newHealth < 0) {
-        newHealth = 0
-    }
-    await syncSetGameObject(lobbyID, game, `cards/${card}/health`, newHealth)
-
-    if (healthChange < 0 && assetCards[card].type === 'villain') {
-        await syncSetGameObject(lobbyID, game, 'turn/damageDealt', -healthChange)
-    }
-}
 
 const getValidInList = (game, event, args, list) => {
     let validCards = []
@@ -1159,6 +1133,20 @@ export const getValidInHand = (game, event, args) => {
 
 export const getValidInSector = (game, event, args) => {
     return getValidInList(game, event, args, game.table.sectors[args.sector])
+}
+
+export const changeCardHealth = async (lobbyID, game, card, healthChange) => {
+    let newHealth = game.cards[card].health + healthChange
+    if (newHealth > assetCards[card].maxHP) {
+        newHealth = assetCards[card].maxHP
+    } else if (newHealth < 0) {
+        newHealth = 0
+    }
+    await syncSetGameObject(lobbyID, game, `cards/${card}/health`, newHealth)
+
+    if (healthChange < 0 && assetCards[card].type === 'villain') {
+        await syncSetGameObject(lobbyID, game, 'turn/damageDealt', -healthChange)
+    }
 }
 
 export const checkValid = (card, game, args) => {

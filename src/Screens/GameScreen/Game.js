@@ -2,12 +2,14 @@ import './Game.css'
 
 import { useContext, useRef, useState, useEffect, useCallback } from 'react'
 
-import { onValue, ref, child, set } from 'firebase/database'
+import { onValue, ref, child } from 'firebase/database'
 import { database, getLobbyRef, getGameObject, syncSetGameObject } from 'firebaseConfig'
 
 import { PlayerIDContextGameScreen, FinalGameDataContextGame, LobbyContextApp, stoneColours, bonusTokens } from 'gameContexts'
 import { randFromArray } from 'util'
-import { assetCards, AbilityEvent, getValidInSector, checkValid, activate } from 'AssetInfo'
+// REMOVE AFTER TESTING
+// eslint-disable-next-line no-unused-vars
+import { assetCards, AbilityEvent, getValidInSector, checkValid, activate, changeCardHealth } from 'AssetInfo'
 import useWaitableState from 'hooks/useWaitableState'
 import useCallableComponentActivator from 'hooks/useCallableComponentActivator'
 import CardSelector from 'Screens/GameScreen/Game/CardSelector'
@@ -53,6 +55,8 @@ const Game = () => {
     const finalGameData = useRef(null)
 
     /* Is updated by listeners, and are used by both steps AND subcomponents */
+    // REMOVE AFTER TESTING
+    // eslint-disable-next-line no-unused-vars
     const [, setPlayerSector, playerSectorVal, playerSectorWait] = useWaitableState(0)
     const [, setInfinityStones, infinityStonesVal, ] = useWaitableState(null)
     const [, setThanos, thanosVal, ] = useWaitableState(1)
@@ -60,7 +64,7 @@ const Game = () => {
     const [, setSector2, , ] = useWaitableState(null)
     const [, setSector3, , ] = useWaitableState(null)
 
-    const rollStoneDie = useCallback(async (game={table: {infinityStones: {}}}) => {
+    const rollStoneDie = useCallback(async (game) => {
         let stone = randFromArray(stoneColours)
         let stoneAchieved = false
         // If rolled infinity stone has already been achieved
@@ -68,13 +72,10 @@ const Game = () => {
             stoneAchieved = true
             console.log('Activate infinity stone effect for the round')
         }
-        game.table.infinityStones[stone] = infinityStonesVal.current[stone] + 1
-        await set(child(finalGameData.current.lobbyRef, `table/infinityStones/${stone}`),
-            infinityStonesVal.current[stone] + 1
-        )
+        await syncSetGameObject(lobby, game, `table/infinityStones/${stone}`, infinityStonesVal.current[stone] + 1)
 
         return [stone, stoneAchieved]
-    }, [infinityStonesVal])
+    }, [infinityStonesVal, lobby])
 
     // `diceToRoll` is an array of which dice in `game.turn.face` to roll/reroll.
     // Do not be deceived and use `game.turn.dice`.
@@ -165,14 +166,14 @@ const Game = () => {
     useEffect(() => { async function anon() {
         if (isMyTurn) {
             let game = await getGameObject(finalGameData.current.lobbyID)
-            
+
             // Used to hold all possible arguments that card activations may need.
             // Also includes the `id` of the card being called, but is set by
-            // `activate` and `checkValid` automatically
+            // `activate` and `checkValid` automatically. Also must include `sector`
+            // if applicable, which is the sector in which the card being activated
+            // is currently in
             const args = {
-                sector: 1, // sector of the card being activated. Must be set properly each time
                 lobbyID: finalGameData.current.lobbyID,
-                lobbyRef: finalGameData.current.lobbyRef,
                 rollStoneDie: rollStoneDie,
                 rollPowerDice: rollPowerDice,
                 activateCardSelector: activateCardSelector,
@@ -184,22 +185,14 @@ const Game = () => {
                 drawToken: drawToken,
             }
 
-            if (checkValid(24, game, args)) {
-                await activate(24, game, args)
-            }
-
-            // Just to ignore all actual steps while testing card abilities in isolation
-            return
-
             /* Step 1 */
-            // eslint-disable-next-line
             setStep(1)
             await playerSectorWait()
             console.log('Received the new player sector value')
 
             /* Step 2 */
             setStep(2)
-            const [step2_stone, step2_stoneAchieved] = await rollStoneDie()
+            const [step2_stone, step2_stoneAchieved] = await rollStoneDie(game)
             console.log(`Increased counter for ${step2_stone} stone. Was ${step2_stoneAchieved ? '' : 'not'} activated`)
 
             /* Step 3 */
@@ -211,59 +204,54 @@ const Game = () => {
             if (step3_action <= 1) {
                 // Turn Thanos CCW
                 if (--step3_thanos === 0) step3_thanos = 3
-                await set(child(finalGameData.current.lobbyRef, 'table/thanos'), step3_thanos)
+                await syncSetGameObject(lobby, game, 'table/thanos', step3_thanos)
                 console.log('Turned Thanos CCW')
             } else if (step3_action <= 3) {
                 // Turn Thanos CW
                 if (++step3_thanos === 4) step3_thanos = 1
-                await set(child(finalGameData.current.lobbyRef, 'table/thanos'), step3_thanos)
+                await syncSetGameObject(lobby, game, 'table/thanos', step3_thanos)
                 console.log('Turned Thanos CW')
             } else if (step3_action === 5) {
-                [step3_stone, step3_stoneAchieved] = await rollStoneDie()
+                [step3_stone, step3_stoneAchieved] = await rollStoneDie(game)
                 console.log(`Increased counter for ${step3_stone} stone. Was ${step3_stoneAchieved ? '' : 'not'} activated`)
             }
             // End of rolling Thanos die
             // Start of activating villain abilities
-            game = await getGameObject(finalGameData.current.lobbyID)
             if (step3_action === 4) {
                 // Activate villain abilities of every sector
                 for (let s = 1; s <= 3; s++) {
-                    const args = {
-                        sector: s,
-                        lobbyRef: finalGameData.current.lobbyRef
-                    }
-                    let validAbilities = getValidInSector(game, AbilityEvent.VILLAIN, args)
-                    for (let c of validAbilities) {
-                        await activate(c, game, args)
+                    args.sector = s
+                    let validVillains = getValidInSector(game, AbilityEvent.VILLAIN, args)
+                    for (let v of validVillains) {
+                        await activate(v, game, args)
                     }
                 }
                 console.log('Activated villain abilities in every sector')
             } else {
                 // Activate villain abilities only in Thanos's sector
-                let validAbilities = getValidInSector(game, AbilityEvent.VILLAIN, args)
-                for (let c of validAbilities) {
-                    await activate(c, game, args)
+                args.sector = game.table.thanos
+                let validVillains = getValidInSector(game, AbilityEvent.VILLAIN, args)
+                for (let v of validVillains) {
+                    await activate(v, game, args)
                 }
                 console.log('Activated villain abilities in current sector')
             }
             // End of activating villain abilities
             // Start of damaging heroes in current sector
-            for (let c of [...game.table.sectors[step3_thanos],
-                ...(playerSectorVal === step3_thanos ? game.players[playerID].cards : [])]) {
-                    if (assetCards[c].type !== 'villain' && game.cards[c].health > 0) {
-                        await set(child(finalGameData.current.lobbyRef, `cards/${c}/health`), --game.cards[c].health)
+            let step3_attackedCards = [...game.table.sectors[game.table.thanos]]
+            if (game.table.playerSector === game.table.thanos) {
+                step3_attackedCards.push(game.players[game.currentPlayer].cards)
+            }
+            for (let c of step3_attackedCards) {
+                    if (assetCards[c].type !== 'villain') {
+                        await changeCardHealth(lobby, game, c, -1)
                     }
             }
             console.log('Thanos attacked all heroes in his sector')
             // End of damaging heroes in current sector
 
             /* End of turn cleanup */
-            if (step2_stoneAchieved) {
-                set(child(finalGameData.current.lobbyRef, `table/infinityStones/${step2_stone}`), 5)
-            }
-            if (step3_stoneAchieved && step3_stone !== step2_stone) {
-                set(child(finalGameData.current.lobbyRef, `table/infinityStones/${step3_stone}`), 5)
-            }
+            
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }; anon()}, [isMyTurn])
