@@ -1115,6 +1115,8 @@ export const assetCards = [
     }
 ]
 
+export const captains = {red: 18, blue: 19, green: 17, purple: 20}
+
 const getValidInList = (game, event, args, list) => {
     let validCards = []
 

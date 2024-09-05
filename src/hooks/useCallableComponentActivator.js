@@ -27,7 +27,7 @@ import { useCallback, useState } from "react"
 const useCallableComponentActivator = () => {
     const [args, setArgs] = useState(null)
 
-    const activator = useCallback(async (args) => {
+    const activator = useCallback(async (args={}) => {
         const promise = new Promise((resolve) => args.returner = resolve)
         setArgs(args)
         const selection = await promise

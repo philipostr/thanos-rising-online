@@ -21,6 +21,7 @@ import { shuffleArray } from "util"
 // REMOVE AFTER TESTING
 // eslint-disable-next-line no-unused-vars
 import { roles, stoneColours } from "gameContexts"
+import { assetCards } from "AssetInfo"
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -50,15 +51,51 @@ onAuthStateChanged(auth, (user) => {
 // Returns true if the lobby creation was successful, false otherwise.
 export const createNewLobby = async (lobbyID) => {
     let randomRoles = shuffleArray(roles)
+
     await set(ref(database, getLobbyRef(lobbyID)), {
+        state: 0, // 0: game waiting, 1: game starting, 2: game started, 3: game ended
+        players: {
+            playerNum: 1,
+            1: {
+                userID: userID,
+                name: 'Player 1',
+                role: randomRoles[0],
+            },
+            2: {
+                userID: '',
+                name: 'Player 2',
+                role: randomRoles[1],
+            },
+            3: {
+                userID: '',
+                name: 'Player 3',
+                role: randomRoles[2],
+            },
+            4: {
+                userID: '',
+                name: 'Player 4',
+                role: randomRoles[3],
+            }
+        },
+        turnNum: 0,
+        currentPlayer: 1,
+        table: {
+            thanos: 1, // what sector thanos is currently looking at
+            infinityStones: Object.fromEntries(stoneColours.map(k => [k, 0])), // progress of stones Thanos possesses
+            playerSector: 0, // what sector the current player is deployed in
+        },
+        cards: Array.from({length: assetCards.length}, (v,i) => { return {health: assetCards[i].maxHP} })
+
+        /* This game object is to be hardcoded for testing assets. Delete this and uncomment
+           the above version to go back to what it should be for the actual game */
         // gameEvent: '', // signal event to players
         // state: 0, // 0: game waiting, 1: game starting, 2: game started, 3: game ended
         // players: {
-        //     playerNum: 1,
+        //     playerNum: 2,
         //     1: {
         //         userID: userID,
         //         name: 'Player 1',
-        //         cards: [], // cards in the players hand
+        //         cards: [captains[randomRoles[0]]], // cards in the players hand
         //         role: randomRoles[0],
         //         ready: false // signal that the player has received event (confirmation = toggle, not true)
         //     },
@@ -86,101 +123,46 @@ export const createNewLobby = async (lobbyID) => {
         // },
         // turnNum: 0,
         // currentPlayer: 1,
-        // absent: [], // cards that have not yet been added to play
+        // absent: absentCards, // cards that have not yet been added to play
         // table: {
         //     thanos: 1, // what sector thanos is currently looking at
-        //     infinityStones: Object.fromEntries(stoneColours.map(k => [k, 0])), // progress of stones Thanos possesses
-        //     playerSector: 0, // what sector the current player is deployed in
+        //     infinityStones: {
+        //         'orange': 1,
+        //         'red': 1,
+        //         'blue': 1,
+        //         'purple': 0,
+        //         'green': 0,
+        //         'yellow': 0
+        //     },
+        //     playerSector: 1, // what sector the current player is deployed in
         //     sectors: {
-        //         1: [], // cards in sector 1
-        //         2: [], // cards in sector 2
-        //         3: [] // cards in sector 3
+        //         1: sector1Cards, // cards in sector 1
+        //         2: sector2Cards, // cards in sector 2
+        //         3: sector3Cards // cards in sector 3
         //     }
         // },
-        // cards: [] // actual information about each card (location is specified in earlier fields)
-        
-        /* This game object is to be hardcoded for testing assets. Delete this and uncomment
-           the above version to go back to what it should be for the actual game */
-        gameEvent: '', // signal event to players
-        state: 0, // 0: game waiting, 1: game starting, 2: game started, 3: game ended
-        players: {
-            playerNum: 2,
-            1: {
-                userID: userID,
-                name: 'Player 1',
-                cards: [13, 43], // cards in the players hand
-                role: randomRoles[0],
-                ready: false // signal that the player has received event (confirmation = toggle, not true)
-            },
-            2: {
-                userID: '',
-                name: 'Player 2',
-                cards: [], // cards in the players hand
-                role: randomRoles[1],
-                ready: false // signal that the player has received event (confirmation = toggle, not true)
-            },
-            3: {
-                userID: '',
-                name: 'Player 3',
-                cards: [], // cards in the players hand
-                role: randomRoles[2],
-                ready: false // signal that the player has received event (confirmation = toggle, not true)
-            },
-            4: {
-                userID: '',
-                name: 'Player 4',
-                cards: [], // cards in the players hand
-                role: randomRoles[3],
-                ready: false // signal that the player has received event (confirmation = toggle, not true)
-            }
-        },
-        turnNum: 0,
-        currentPlayer: 1,
-        absent: [], // cards that have not yet been added to play
-        table: {
-            thanos: 1, // what sector thanos is currently looking at
-            infinityStones: {
-                'orange': 1,
-                'red': 1,
-                'blue': 1,
-                'purple': 0,
-                'green': 0,
-                'yellow': 0
-            },
-            playerSector: 1, // what sector the current player is deployed in
-            sectors: {
-                1: [42, 43, 44, 45], // cards in sector 1
-                2: [], // cards in sector 2
-                3: [] // cards in sector 3
-            }
-        },
-        cards: [
-            null,null,null,null,null,null,null,null,null,null,null,null,null,null,{health: 0},null,null,
-            null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
-            null,null,null,null,null,null,null,null,
-            {health: 2},{health: 2},{health: 2},{health: 3}
-        ],
-        tokens: [
-            '2heal'
-        ],
-        turn: {
-            dice: {
-                red: 0,
-                blue: 0,
-                green: 0,
-                purple: 0
-            },
-            faces: [
-                {colour: 'red', face: 'combat2'},
-                {colour: 'blue', face: 'tech2'},
-                {colour: 'purple', face: 'cosmic'},
-                {colour: 'green', face: 'combat'}
-            ],
-            values: {
-                combat: 1,
-            },
-            damageDealt: 2
-        }
+        // cards: Array.from({length: assetCards.length}, (v,i) => { return {health: assetCards[i].maxHP} }),
+        // tokens: [
+        //     '2heal'
+        // ],
+        // turn: {
+        //     dice: {
+        //         red: 0,
+        //         blue: 0,
+        //         green: 0,
+        //         purple: 0
+        //     },
+        //     faces: [
+        //         {colour: 'red', face: 'combat2'},
+        //         {colour: 'blue', face: 'tech2'},
+        //         {colour: 'purple', face: 'cosmic'},
+        //         {colour: 'green', face: 'combat'}
+        //     ],
+        //     values: {
+        //         combat: 1,
+        //     },
+        //     damageDealt: 2
+        // }
     })
 
     return true

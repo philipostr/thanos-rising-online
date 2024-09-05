@@ -11,7 +11,9 @@ import { randFromArray } from 'util'
 // eslint-disable-next-line no-unused-vars
 import { assetCards, AbilityEvent, getValidInSector, checkValid, activate, changeCardHealth } from 'AssetInfo'
 import useWaitableState from 'hooks/useWaitableState'
+
 import useCallableComponentActivator from 'hooks/useCallableComponentActivator'
+import SectorSelector from './Game/SectorSelector'
 import CardSelector from 'Screens/GameScreen/Game/CardSelector'
 import DiceSelector from 'Screens/GameScreen/Game/DiceSelector'
 import FaceChanger from 'Screens/GameScreen/Game/FaceChanger'
@@ -38,6 +40,8 @@ const Game = () => {
     // Steps/phases of a player's turn. Used by subcomponents to know
     // when and how to act differently
     const [, setStep] = useState(0)
+    // For activating and using the SectorSelector component
+    const [sectorSelectorArgs, activateSectorSelector] = useCallableComponentActivator()
     // For activating and using the CardSelector component
     const [cardSelectorArgs, activateCardSelector] = useCallableComponentActivator()
     // For activating and using the DiceSelector component
@@ -111,7 +115,7 @@ const Game = () => {
 
     // On component mount, initialize the finalGameData object and listeners
     useEffect(() => {
-        /* Initialize finalGameData. Update src/gameContext.js accordingly*/
+        /* Initialize finalGameData. Update src/gameContext.js accordingly */
         let finalGameDataObject = {
             lobbyID: lobby,
             lobbyRef: ref(database, getLobbyRef(lobby)),
@@ -120,11 +124,10 @@ const Game = () => {
 
         getGameObject(lobby).then((game) => {
             if (!game) return
-            finalGameDataObject.roles = {
-                1: game.players[1].role,
-                2: game.players[2].role,
-                3: game.players[3].role,
-                4: game.players[4].role
+
+            finalGameDataObject.roles = {}
+            for (let p = 1; p <= game.players.playerNum; p++) {
+                finalGameDataObject.roles[p] = game.players[p].role
             }
         })
 
@@ -185,9 +188,22 @@ const Game = () => {
                 drawToken: drawToken,
             }
 
+            // Set/reset game.turn object, which holds turn specific info
+            syncSetGameObject(lobby, game, 'turn', {
+                dice: {
+                    red: 0, blue: 0, green: 0, purple: 0
+                },
+                faces: [],
+                values: {
+                    red: 0, blue: 0, green: 0, purple: 0
+                },
+                damageDealt: 0
+            })
+
             /* Step 1 */
             setStep(1)
-            await playerSectorWait()
+            let step1_sector = await activateSectorSelector()
+            await syncSetGameObject(lobby, game, 'table/playerSector', step1_sector)
             console.log('Received the new player sector value')
 
             /* Step 2 */
@@ -262,6 +278,9 @@ const Game = () => {
                 <p>
                     This is the game!
                 </p>
+                {sectorSelectorArgs &&
+                    <SectorSelector args={sectorSelectorArgs} />
+                }
                 {cardSelectorArgs && 
                     <CardSelector args={cardSelectorArgs} />
                 }
